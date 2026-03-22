@@ -44,8 +44,7 @@ const injectPWA = () => {
   const manifest = {
     name: "FPIES Beskytter",
     short_name: "FPIES",
-    start_url: window.location.origin + "/",
-    scope: window.location.origin + "/",
+    start_url: window.location.origin || "/",
     display: "standalone",
     background_color: "#eff6ff",
     theme_color: "#eff6ff",
@@ -57,8 +56,7 @@ const injectPWA = () => {
     }]
   };
   
-  const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-  const manifestUrl = URL.createObjectURL(manifestBlob);
+  const manifestUrl = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
   
   if (!document.querySelector('link[rel="manifest"]')) {
     const manifestLink = document.createElement('link');
