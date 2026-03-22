@@ -44,7 +44,8 @@ const injectPWA = () => {
   const manifest = {
     name: "FPIES Beskytter",
     short_name: "FPIES",
-    start_url: window.location.pathname || "/",
+    start_url: window.location.origin + "/",
+    scope: window.location.origin + "/",
     display: "standalone",
     background_color: "#eff6ff",
     theme_color: "#eff6ff",
@@ -71,22 +72,23 @@ const injectPWA = () => {
 injectPWA();
 
 // --- FIREBASE INITIALIZATION (PULLING FROM VERCEL) ---
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+  apiKey: "AIzaSyD2E87KHJCxzYzkTrxtinnEHUQR_i0bAYE",
+  authDomain: "fpies-tracker.firebaseapp.com",
+  projectId: "fpies-tracker",
+  storageBucket: "fpies-tracker.firebasestorage.app",
+  messagingSenderId: "824186924382",
+  appId: "1:824186924382:web:2c8782cc29f74490b933cf"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = import.meta.env.VITE_FIREBASE_APP_ID || 'fpies-app-id';
+const appId = typeof __app_id !== 'undefined' ? __app_id : '1:824186924382:web:2c8782cc29f74490b933cf';
 
 // --- GEMINI API SETUP ---
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+// For Vercel, replace the empty string below with your actual Gemini API key (e.g., "AIzaSy...")
+const GEMINI_API_KEY = "";
 
 export default function App() {
   const [user, setUser] = useState(null);
