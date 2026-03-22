@@ -3,16 +3,16 @@ import { Camera, List, ShieldCheck, ShieldAlert, Plus, CheckCircle, XCircle, Inf
 
 // --- FIREBASE IMPORTS ---
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, arrayUnion } from 'firebase/firestore';
 
 // --- PWA DYNAMIC INJECTOR ---
-// This function dynamically creates everything a browser needs to install the app
 const injectPWA = () => {
   if (typeof window === 'undefined') return;
 
   // 1. Inject Mobile/iOS Meta Tags
   const metaTags = [
+    { name: 'mobile-web-app-capable', content: 'yes' },
     { name: 'apple-mobile-web-app-capable', content: 'yes' },
     { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
     { name: 'apple-mobile-web-app-title', content: 'FPIES' },
@@ -33,7 +33,6 @@ const injectPWA = () => {
   const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#2563eb" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`;
   const svgDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgIcon)}`;
 
-  // Inject iOS Touch Icon
   if (!document.querySelector('link[rel="apple-touch-icon"]')) {
     const appleIcon = document.createElement('link');
     appleIcon.rel = 'apple-touch-icon';
@@ -45,7 +44,7 @@ const injectPWA = () => {
   const manifest = {
     name: "FPIES Beskytter",
     short_name: "FPIES",
-    start_url: ".",
+    start_url: window.location.pathname || "/",
     display: "standalone",
     background_color: "#eff6ff",
     theme_color: "#eff6ff",
@@ -66,33 +65,28 @@ const injectPWA = () => {
     manifestLink.href = manifestUrl;
     document.head.appendChild(manifestLink);
   }
-
-  // 4. Register a dummy Service Worker to trigger the Install prompt
-  if ('serviceWorker' in navigator) {
-    const swCode = `
-      self.addEventListener('install', (e) => self.skipWaiting());
-      self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
-      self.addEventListener('fetch', (e) => {});
-    `;
-    const swBlob = new Blob([swCode], { type: 'application/javascript' });
-    const swUrl = URL.createObjectURL(swBlob);
-    
-    navigator.serviceWorker.register(swUrl).catch(err => console.log('SW registration failed:', err));
-  }
 };
 
 // Run the PWA injector immediately
 injectPWA();
 
-// --- FIREBASE INITIALIZATION ---
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+// --- FIREBASE INITIALIZATION (PULLING FROM VERCEL) ---
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
+};
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'fpies-app-id';
+const appId = import.meta.env.VITE_FIREBASE_APP_ID || 'fpies-app-id';
 
 // --- GEMINI API SETUP ---
-const GEMINI_API_KEY = ""; // Injected by environment
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -106,11 +100,7 @@ export default function App() {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
+        await signInAnonymously(auth);
       } catch (error) {
         console.error("Auth error:", error);
       }
@@ -128,7 +118,7 @@ export default function App() {
   useEffect(() => {
     if (!user || !familyCode) return;
 
-    // RULE 1: Strict Paths -> artifacts/{appId}/public/data/{collectionName}
+    // Strict Paths -> artifacts/{appId}/public/data/{collectionName}
     const familyDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'families', familyCode);
     
     const unsubscribe = onSnapshot(familyDocRef, (docSnap) => {
@@ -325,10 +315,7 @@ function ScannerView({ familyData }) {
     setLoading(true);
     setResult(null);
 
-    // Remove the data URL prefix for Gemini API
     const base64Data = base64Image.split(',')[1];
-    
-    // Construct the danger list for the prompt
     const dangerListString = familyData.dangerFoods.join(", ");
 
     const prompt = `
@@ -573,7 +560,7 @@ function TrialsView({ familyCode, familyData }) {
   };
 
   const activeTrials = familyData.trials.filter(t => t.status === 'active');
-  const pastTrials = familyData.trials.filter(t => t.status !== 'active').slice(-5); // Show last 5
+  const pastTrials = familyData.trials.filter(t => t.status !== 'active').slice(-5);
 
   return (
     <div className="max-w-md mx-auto space-y-6">
