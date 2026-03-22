@@ -34,7 +34,7 @@ const appId = typeof __app_id !== 'undefined' ? __app_id : '1:824186924382:web:2
 
 // --- GEMINI API SETUP ---
 // Remember to paste your Gemini API key here if you aren't using Vercel Environment Variables!
-const GEMINI_API_KEY = ""; 
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 
 export default function App() {
   const [user, setUser] = useState(null);
