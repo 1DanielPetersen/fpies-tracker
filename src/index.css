@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Adds padding for iPhones with the home indicator bar at the bottom */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
