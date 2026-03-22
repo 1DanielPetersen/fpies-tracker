@@ -273,22 +273,26 @@ function ScannerView({ familyData }) {
     // Construct the danger list for the prompt
     const dangerListString = familyData.dangerFoods.join(", ");
 
-    const prompt = `
-      You are an expert in pediatric FPIES (Food Protein-Induced Enterocolitis Syndrome). 
-      Here is an image of an ingredient label, likely in Danish or English.
+      const prompt = `
+      You are an expert in pediatric FPIES (Food Protein-Induced Enterocolitis Syndrome) and clinical nutrition. 
+      Here is an image of an ingredient label, likely in Danish, English or Polish.
       
       The baby's STRICT DANGER LIST is: ${dangerListString}.
       
-      CRITICAL INSTRUCTION: You must intensely scan for ANY hidden corn derivatives. In Danish, this includes (but is not limited to): Majs, Majsmel, Majsstivelse, Maltodextrin, Glukosesirup, Dextrose, Modificeret stivelse (if source unknown, flag it). Also look for Hirse (Millet).
+      CRITICAL INSTRUCTIONS: 
+      1. You must intensely scan for the exact ingredients on the danger list AND ANY of their derivatives, byproducts, or sub-categories.
+      2. If "Majs" (Corn) is on the list, you MUST flag Majsmel, Majsstivelse, Maltodextrin, Glukosesirup, Dextrose, and Modificeret stivelse.
+      3. If "Hvede" (Wheat) or "Korn" (Grains) is on the list, you MUST flag Hvedemel, Havregryn, Rugmel, Byg, Spelt, and any other grain flours.
+      4. If "Mælk" (Dairy) is on the list, flag Valle, Kasein, Mælkesukker, etc.
       
-      Extract the ingredients and check if any ingredient from the danger list or any corn derivative is present.
+      Extract the ingredients. If you find ANY danger list item OR a derivative of a danger list item, you must flag it.
       
       Respond ONLY with a valid JSON object matching this schema exactly:
       {
         "ingredientsFound": ["list", "of", "all", "extracted", "ingredients"],
-        "isSafe": boolean (true if NO dangers found, false if ANY danger/derivative is found),
+        "isSafe": boolean (true if NO dangers/derivatives found, false if ANY danger/derivative is found),
         "flaggedIngredients": ["list", "of", "ingredients", "that", "triggered", "the", "warning"],
-        "reasoning": "A short, clear sentence IN DANISH explaining the result (e.g. 'Maltodextrin er et majsderivat.')"
+        "reasoning": "A short, clear sentence IN DANISH explaining the result (e.g. 'Hvedemel er et hvedederivat/kornsort, som er på forbudt-listen.')"
       }
     `;
 
