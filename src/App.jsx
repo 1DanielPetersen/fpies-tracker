@@ -6,69 +6,6 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, arrayUnion } from 'firebase/firestore';
 
-// --- PWA DYNAMIC INJECTOR ---
-const injectPWA = () => {
-  if (typeof window === 'undefined') return;
-
-  // 1. Inject Mobile/iOS Meta Tags
-  const metaTags = [
-    { name: 'mobile-web-app-capable', content: 'yes' },
-    { name: 'apple-mobile-web-app-capable', content: 'yes' },
-    { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
-    { name: 'apple-mobile-web-app-title', content: 'FPIES' },
-    { name: 'theme-color', content: '#eff6ff' },
-    { name: 'viewport', content: 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' }
-  ];
-
-  metaTags.forEach(tag => {
-    if (!document.querySelector(`meta[name="${tag.name}"]`)) {
-      const el = document.createElement('meta');
-      el.name = tag.name;
-      el.content = tag.content;
-      document.head.appendChild(el);
-    }
-  });
-
-  // 2. Generate an inline SVG Icon (Blue Shield)
-  const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#2563eb" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`;
-  const svgDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgIcon)}`;
-
-  if (!document.querySelector('link[rel="apple-touch-icon"]')) {
-    const appleIcon = document.createElement('link');
-    appleIcon.rel = 'apple-touch-icon';
-    appleIcon.href = svgDataUrl;
-    document.head.appendChild(appleIcon);
-  }
-
-  // 3. Generate and Inject Web App Manifest
-  const manifest = {
-    name: "FPIES Beskytter",
-    short_name: "FPIES",
-    start_url: window.location.origin || "/",
-    display: "standalone",
-    background_color: "#eff6ff",
-    theme_color: "#eff6ff",
-    icons: [{
-      src: svgDataUrl,
-      sizes: "192x192 512x512",
-      type: "image/svg+xml",
-      purpose: "any maskable"
-    }]
-  };
-  
-  const manifestUrl = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
-  
-  if (!document.querySelector('link[rel="manifest"]')) {
-    const manifestLink = document.createElement('link');
-    manifestLink.rel = 'manifest';
-    manifestLink.href = manifestUrl;
-    document.head.appendChild(manifestLink);
-  }
-};
-
-// Run the PWA injector immediately
-injectPWA();
-
 // --- FIREBASE INITIALIZATION (PULLING FROM VERCEL) ---
 const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
   apiKey: "AIzaSyD2E87KHJCxzYzkTrxtinnEHUQR_i0bAYE",
