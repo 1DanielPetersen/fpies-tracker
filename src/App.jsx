@@ -293,30 +293,36 @@ function ScannerView({ familyData }) {
     `;
 
     try {
-      const fetchWithRetry = async (retries = 3) => {
-        const payload = {
-          contents: [{
-            role: "user",
-            parts: [
-              { text: prompt },
-              { inlineData: { mimeType: "image/jpeg", data: base64Data } }
-            ]
-          }],
-          generationConfig: { responseMimeType: "application/json" }
-        };
-
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) throw new Error("API Request Failed");
-        return await response.json();
+const payload = {
+        contents: [{
+          role: "user",
+          parts: [
+            { text: prompt },
+            { inlineData: { mimeType: "image/jpeg", data: base64Data } }
+          ]
+        }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          thinkingConfig: { thinkingLevel: "low" }
+        }
       };
 
-      const data = await fetchWithRetry();
-      const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errBody = await response.text();
+        console.error("Gemini API error:", response.status, errBody);
+        throw new Error(`API Request Failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      // Gemini 3 models include thinking parts — find the text part with JSON
+      const parts = data.candidates?.[0]?.content?.parts || [];
+      const textResponse = parts.filter(p => p.text && !p.thought).map(p => p.text).pop();
       
       if (textResponse) {
         const parsedResult = JSON.parse(textResponse);
