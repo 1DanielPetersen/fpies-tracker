@@ -6,93 +6,35 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, arrayUnion } from 'firebase/firestore';
 
-// --- PWA DYNAMIC INJECTOR ---
-// This function dynamically creates everything a browser needs to install the app
-const injectPWA = () => {
-  if (typeof window === 'undefined') return;
-
-  // 1. Inject Mobile/iOS Meta Tags
-  const metaTags = [
-    { name: 'apple-mobile-web-app-capable', content: 'yes' },
-    { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
-    { name: 'apple-mobile-web-app-title', content: 'FPIES' },
-    { name: 'theme-color', content: '#eff6ff' },
-    { name: 'viewport', content: 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' }
-  ];
-
-  metaTags.forEach(tag => {
-    if (!document.querySelector(`meta[name="${tag.name}"]`)) {
-      const el = document.createElement('meta');
-      el.name = tag.name;
-      el.content = tag.content;
-      document.head.appendChild(el);
-    }
+// --- PWA SERVICE WORKER REGISTRATION ---
+// Browsers strictly require a Service Worker to trigger the native "Install App" prompt.
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').then(() => {
+      console.log('Service Worker registered successfully for PWA.');
+    }).catch((err) => {
+      console.log('Service Worker registration failed:', err);
+    });
   });
-
-  // 2. Generate an inline SVG Icon (Blue Shield)
-  const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#2563eb" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`;
-  const svgDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgIcon)}`;
-
-  // Inject iOS Touch Icon
-  if (!document.querySelector('link[rel="apple-touch-icon"]')) {
-    const appleIcon = document.createElement('link');
-    appleIcon.rel = 'apple-touch-icon';
-    appleIcon.href = svgDataUrl;
-    document.head.appendChild(appleIcon);
-  }
-
-  // 3. Generate and Inject Web App Manifest
-  const manifest = {
-    name: "FPIES Beskytter",
-    short_name: "FPIES",
-    start_url: ".",
-    display: "standalone",
-    background_color: "#eff6ff",
-    theme_color: "#eff6ff",
-    icons: [{
-      src: svgDataUrl,
-      sizes: "192x192 512x512",
-      type: "image/svg+xml",
-      purpose: "any maskable"
-    }]
-  };
-  
-  const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-  const manifestUrl = URL.createObjectURL(manifestBlob);
-  
-  if (!document.querySelector('link[rel="manifest"]')) {
-    const manifestLink = document.createElement('link');
-    manifestLink.rel = 'manifest';
-    manifestLink.href = manifestUrl;
-    document.head.appendChild(manifestLink);
-  }
-
-  // 4. Register a dummy Service Worker to trigger the Install prompt
-  if ('serviceWorker' in navigator) {
-    const swCode = `
-      self.addEventListener('install', (e) => self.skipWaiting());
-      self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
-      self.addEventListener('fetch', (e) => {});
-    `;
-    const swBlob = new Blob([swCode], { type: 'application/javascript' });
-    const swUrl = URL.createObjectURL(swBlob);
-    
-    navigator.serviceWorker.register(swUrl).catch(err => console.log('SW registration failed:', err));
-  }
-};
-
-// Run the PWA injector immediately
-injectPWA();
+}
 
 // --- FIREBASE INITIALIZATION ---
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+  apiKey: "AIzaSyD2E87KHJCxzYzkTrxtinnEHUQR_i0bAYE",
+  authDomain: "fpies-tracker.firebaseapp.com",
+  projectId: "fpies-tracker",
+  storageBucket: "fpies-tracker.firebasestorage.app",
+  messagingSenderId: "824186924382",
+  appId: "1:824186924382:web:2c8782cc29f74490b933cf"
+};
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'fpies-app-id';
+const appId = typeof __app_id !== 'undefined' ? __app_id : '1:824186924382:web:2c8782cc29f74490b933cf';
 
 // --- GEMINI API SETUP ---
-const GEMINI_API_KEY = ""; // Injected by environment
+// Remember to paste your Gemini API key here if you aren't using Vercel Environment Variables!
+const GEMINI_API_KEY = ""; 
 
 export default function App() {
   const [user, setUser] = useState(null);
