@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, List, ShieldCheck, ShieldAlert, Plus, CheckCircle, XCircle, Info, ScanLine, LogOut, Users, Image as ImageIcon, RefreshCw } from 'lucide-react';
+import { Camera, List, ShieldCheck, ShieldAlert, Plus, CheckCircle, XCircle, Info, ScanLine, LogOut, Users, Image as ImageIcon, Copy, Sparkles, ChevronDown, ArrowUpDown, Clock, RefreshCw } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, arrayUnion } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 
 // --- BUILD VERSION ---
 // Injected by Vite at build time (see vite.config.js). Falls back to 'dev'
@@ -106,6 +106,29 @@ const appId = typeof __app_id !== 'undefined' ? __app_id : '1:824186924382:web:2
 // Remember to paste your Gemini API key here if you aren't using Vercel Environment Variables!
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 
+// --- LIST NORMALIZATION ---
+// Legacy entries were plain strings; new entries are { name, addedAt } objects.
+const normalizeFood = (item, fallbackDate) =>
+  typeof item === 'string' ? { name: item, addedAt: fallbackDate || null } : item;
+
+const normalizeList = (list, fallbackDate) =>
+  (list || []).map((it) => normalizeFood(it, fallbackDate));
+
+function sortFoods(list, mode) {
+  const arr = [...list];
+  switch (mode) {
+    case 'az':
+      return arr.sort((a, b) => a.name.localeCompare(b.name, 'da'));
+    case 'za':
+      return arr.sort((a, b) => b.name.localeCompare(a.name, 'da'));
+    case 'oldest':
+      return arr.sort((a, b) => (a.addedAt || '').localeCompare(b.addedAt || ''));
+    case 'newest':
+    default:
+      return arr.sort((a, b) => (b.addedAt || '').localeCompare(a.addedAt || ''));
+  }
+}
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
@@ -163,18 +186,19 @@ export default function App() {
     const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
     const familyDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'families', newCode);
     
+    const now = new Date().toISOString();
     const initialData = {
-      createdAt: new Date().toISOString(),
+      createdAt: now,
       safeFoods: [],
       dangerFoods: [
-        "Majsmel (Cornmeal)", 
-        "Hirse (Millet)", 
+        "Majsmel (Cornmeal)",
+        "Hirse (Millet)",
         "Majs (Corn)",
         "Majsstivelse (Corn Starch)",
         "Glukosesirup (Glucose Syrup)",
         "Maltodextrin",
         "Dextrose"
-      ],
+      ].map((name) => ({ name, addedAt: now })),
       trials: []
     };
 
@@ -232,15 +256,20 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-rose-50 flex flex-col font-sans pb-24">
       <UpdateBanner show={updateAvailable} onUpdate={applyUpdate} />
       {/* Header */}
-      <header className="bg-white p-4 shadow-sm border-b sticky top-0 z-10 flex justify-between items-center">
+      <header className="bg-white/80 backdrop-blur p-4 shadow-sm border-b border-white sticky top-0 z-10 flex justify-between items-center">
         <div>
-          <h1 className="text-xl font-bold text-slate-800">FPIES Beskytter</h1>
-          <p className="text-xs text-slate-500 font-medium">Familiekode: <span className="text-blue-600 tracking-wider">{familyCode}</span></p>
+          <h1 className="text-xl font-extrabold tracking-tight text-slate-800 flex items-center gap-2">
+            <span className="inline-flex w-8 h-8 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white items-center justify-center shadow-md shadow-blue-500/30">
+              <ShieldCheck size={18} />
+            </span>
+            FPIES Beskytter
+          </h1>
+          <p className="text-xs text-slate-500 font-semibold ml-10">Familiekode: <span className="text-blue-600 tracking-wider">{familyCode}</span></p>
         </div>
-        <button onClick={handleLeaveFamily} className="p-2 text-slate-400 hover:text-red-500 rounded-full">
+        <button onClick={handleLeaveFamily} className="p-2 text-slate-400 hover:text-red-500 rounded-full transition-colors">
           <LogOut size={20} />
         </button>
       </header>
@@ -253,7 +282,7 @@ export default function App() {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around p-2 pb-safe z-20">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-slate-100 flex justify-around p-2 pb-safe z-20 shadow-[0_-4px_24px_-8px_rgba(15,23,42,0.08)]">
         <NavButton active={activeTab === 'scanner'} onClick={() => setActiveTab('scanner')} icon={<Camera />} label="Scanner" />
         <NavButton active={activeTab === 'trials'} onClick={() => setActiveTab('trials')} icon={<List />} label="4-Dages Test" />
         <NavButton active={activeTab === 'foods'} onClick={() => setActiveTab('foods')} icon={<ShieldCheck />} label="Madlister" />
@@ -294,40 +323,40 @@ function FamilySetup({ onCreate, onJoin, error }) {
   const [joinCode, setJoinCode] = useState("");
 
   return (
-    <div className="min-h-screen bg-blue-50 flex flex-col items-center justify-center p-6">
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md text-center">
-        <div className="bg-blue-100 text-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-rose-50 to-amber-50 flex flex-col items-center justify-center p-6">
+      <div className="bg-white p-8 rounded-3xl shadow-2xl shadow-blue-500/10 w-full max-w-md text-center border border-white">
+        <div className="bg-gradient-to-br from-blue-500 to-indigo-500 text-white w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/30">
           <ShieldAlert size={32} />
         </div>
-        <h1 className="text-2xl font-bold text-slate-800 mb-2">FPIES Beskytter</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-slate-800 mb-2">FPIES Beskytter</h1>
         <p className="text-slate-600 mb-8">Synkroniser sikre fødevarer, forbudte lister og 4-dages tests på tværs af enheder med din partner.</p>
-        
-        <button 
+
+        <button
           onClick={onCreate}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2 mb-6"
+          className="w-full bg-gradient-to-br from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-extrabold py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-500/30 transition-all hover:scale-[1.01] flex items-center justify-center gap-2 mb-6"
         >
           <Plus size={20} /> Opret Ny Familie
         </button>
 
         <div className="relative flex items-center py-5">
           <div className="flex-grow border-t border-slate-200"></div>
-          <span className="flex-shrink-0 mx-4 text-slate-400 text-sm">ELLER</span>
+          <span className="flex-shrink-0 mx-4 text-slate-400 text-sm font-semibold">ELLER</span>
           <div className="flex-grow border-t border-slate-200"></div>
         </div>
 
         <div className="space-y-3">
-          <input 
-            type="text" 
-            placeholder="Indtast Familiekode" 
-            className="w-full border border-slate-300 rounded-xl px-4 py-3 text-center text-lg uppercase tracking-widest focus:ring-2 focus:ring-blue-500 outline-none"
+          <input
+            type="text"
+            placeholder="Indtast Familiekode"
+            className="w-full border-2 border-slate-200 rounded-2xl px-4 py-3 text-center text-lg uppercase tracking-widest focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
             value={joinCode}
             onChange={(e) => setJoinCode(e.target.value)}
           />
           {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
-          <button 
+          <button
             onClick={() => onJoin(joinCode)}
             disabled={!joinCode.trim()}
-            className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-4 rounded-xl shadow-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full bg-slate-800 hover:bg-slate-900 text-white font-extrabold py-3.5 px-4 rounded-2xl shadow-lg shadow-slate-500/20 transition-all hover:scale-[1.01] disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2"
           >
             <Users size={20} /> Deltag i Familie
           </button>
@@ -339,12 +368,14 @@ function FamilySetup({ onCreate, onJoin, error }) {
 
 function NavButton({ active, onClick, icon, label }) {
   return (
-    <button 
-      onClick={onClick} 
-      className={`flex flex-col items-center justify-center w-24 py-2 transition-colors ${active ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+    <button
+      onClick={onClick}
+      className={`flex flex-col items-center justify-center w-24 py-2 transition-all ${active ? 'text-blue-600 scale-105' : 'text-slate-400 hover:text-slate-600'}`}
     >
-      {React.cloneElement(icon, { size: 24, className: 'mb-1' })}
-      <span className="text-[10px] font-semibold">{label}</span>
+      <span className={`inline-flex items-center justify-center rounded-2xl p-1.5 mb-0.5 transition-all ${active ? 'bg-gradient-to-br from-blue-100 to-indigo-50 shadow-sm' : ''}`}>
+        {React.cloneElement(icon, { size: 22 })}
+      </span>
+      <span className="text-[10px] font-extrabold tracking-wide">{label}</span>
     </button>
   );
 }
@@ -376,29 +407,41 @@ function ScannerView({ familyData }) {
     // Remove the data URL prefix for Gemini API
     const base64Data = base64Image.split(',')[1];
     
-    // Construct the danger list for the prompt
-    const dangerListString = familyData.dangerFoods.join(", ");
+    // Construct the safe + danger lists for the prompt
+    const safeListString   = normalizeList(familyData.safeFoods, familyData.createdAt).map((f) => f.name).join(", ");
+    const dangerListString = normalizeList(familyData.dangerFoods, familyData.createdAt).map((f) => f.name).join(", ");
 
       const prompt = `
-      You are an expert in pediatric FPIES (Food Protein-Induced Enterocolitis Syndrome) and clinical nutrition. 
+      You are an expert in pediatric FPIES (Food Protein-Induced Enterocolitis Syndrome) and clinical nutrition.
       Here is an image of an ingredient label, likely in Danish, English or Polish.
-      
-      The baby's STRICT DANGER LIST is: ${dangerListString}.
-      
-      CRITICAL INSTRUCTIONS: 
-      1. You must intensely scan for the exact ingredients on the danger list AND ANY of their derivatives, byproducts, or sub-categories.
-      2. If "Majs" (Corn) is on the list, you MUST flag Majsmel, Majsstivelse, Maltodextrin, Glukosesirup, Dextrose, and Modificeret stivelse.
-      3. If "Hvede" (Wheat) or "Korn" (Grains) is on the list, you MUST flag Hvedemel, Havregryn, Rugmel, Byg, Spelt, and any other grain flours.
-      4. If "Mælk" (Dairy) is on the list, flag Valle, Kasein, Mælkesukker, etc.
-      
-      Extract the ingredients. If you find ANY danger list item OR a derivative of a danger list item, you must flag it.
-      
+
+      The baby's STRICT DANGER LIST is: ${dangerListString || "(none)"}.
+      The baby's KNOWN SAFE LIST is: ${safeListString || "(none)"}.
+
+      CRITICAL INSTRUCTIONS:
+      1. Extract every ingredient from the label.
+      2. For each ingredient, decide which bucket it belongs to:
+         - "knownDanger": it matches the danger list OR is a derivative/byproduct/sub-category of a danger list item.
+         - "knownSafe":   it matches the safe list (allow translations between Danish / English / Polish; e.g. "Sucre" ≈ "Sukker").
+         - "unknown":     it is neither known-safe nor known-dangerous (new/untested ingredient).
+      3. Derivative rules you MUST apply for knownDanger:
+         - If "Majs" (Corn) is on the danger list, flag Majsmel, Majsstivelse, Maltodextrin, Glukosesirup, Dextrose, Modificeret stivelse.
+         - If "Hvede" (Wheat) or "Korn" (Grains) is on the danger list, flag Hvedemel, Havregryn, Rugmel, Byg, Spelt, and any other grain flours.
+         - If "Mælk" (Dairy) is on the danger list, flag Valle, Kasein, Mælkesukker, Laktose, etc.
+      4. Compute "status":
+         - "red"    if knownDanger is non-empty.
+         - "orange" if knownDanger is empty AND unknown is non-empty.
+         - "green"  if knownDanger is empty AND unknown is empty.
+      5. Trivial things like "water" / "vand" / "salt" count as unknown unless they explicitly appear on a list.
+
       Respond ONLY with a valid JSON object matching this schema exactly:
       {
         "ingredientsFound": ["list", "of", "all", "extracted", "ingredients"],
-        "isSafe": boolean (true if NO dangers/derivatives found, false if ANY danger/derivative is found),
-        "flaggedIngredients": ["list", "of", "ingredients", "that", "triggered", "the", "warning"],
-        "reasoning": "A short, clear sentence IN DANISH explaining the result (e.g. 'Hvedemel er et hvedederivat/kornsort, som er på forbudt-listen.')"
+        "knownSafe":   ["ingredients matching the safe list"],
+        "knownDanger": ["ingredients matching the danger list or derivatives"],
+        "unknown":     ["ingredients not on either list"],
+        "status": "green" | "orange" | "red",
+        "reasoning": "A short, clear sentence IN DANISH explaining the result."
       }
     `;
 
@@ -455,9 +498,9 @@ const payload = {
 
   return (
     <div className="flex flex-col items-center max-w-md mx-auto h-full">
-      <div className="w-full bg-blue-50 p-4 rounded-xl border border-blue-100 mb-6 flex items-start gap-3">
+      <div className="w-full bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl border border-blue-100 mb-6 flex items-start gap-3 shadow-sm">
         <Info className="text-blue-500 shrink-0 mt-0.5" size={20} />
-        <p className="text-sm text-blue-800">
+        <p className="text-sm text-blue-800 font-medium leading-relaxed">
           Tag et billede eller upload en ingrediensliste. AI'en vil lede efter ingredienser, der matcher din Forbudt-liste, og specielt lede efter skjulte majsderivater.
         </p>
       </div>
@@ -465,24 +508,24 @@ const payload = {
       {!image && !loading && (
         <div className="flex flex-col gap-4 w-full">
           {/* Main Camera Button */}
-          <label className="w-full h-64 bg-slate-100 hover:bg-slate-200 border-4 border-dashed border-slate-300 rounded-3xl flex flex-col items-center justify-center text-slate-500 transition-colors cursor-pointer">
-            <input 
-              type="file" 
-              accept="image/*" 
-              capture="environment" 
-              className="hidden" 
+          <label className="w-full h-64 bg-gradient-to-br from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 rounded-3xl flex flex-col items-center justify-center text-white transition-all hover:scale-[1.01] shadow-xl shadow-blue-500/30 cursor-pointer">
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
               onChange={handleImageCapture}
             />
-            <Camera size={64} className="mb-4 text-slate-400" />
-            <span className="font-semibold text-lg">Åbn Kamera for at Scanne</span>
+            <Camera size={64} className="mb-4" />
+            <span className="font-extrabold text-lg tracking-tight">Åbn Kamera for at Scanne</span>
           </label>
-          
+
           {/* Secondary Gallery Button */}
-          <label className="w-full py-4 bg-white border-2 border-slate-200 text-slate-600 font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors cursor-pointer">
-            <input 
-              type="file" 
-              accept="image/*" 
-              className="hidden" 
+          <label className="w-full py-4 bg-white border-2 border-slate-200 text-slate-600 font-extrabold rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer shadow-sm">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
               onChange={handleImageCapture}
             />
             <ImageIcon size={20} className="text-slate-400" /> Upload Billede fra Galleri
@@ -502,40 +545,84 @@ const payload = {
             )}
           </div>
 
-          {result && !result.error && (
-            <div className={`p-5 rounded-2xl shadow-sm border ${result.isSafe ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
-              <div className="flex items-center gap-3 mb-3">
-                {result.isSafe ? (
-                  <ShieldCheck size={32} className="text-emerald-500" />
-                ) : (
-                  <ShieldAlert size={32} className="text-red-500" />
-                )}
-                <h3 className={`text-xl font-bold ${result.isSafe ? 'text-emerald-800' : 'text-red-800'}`}>
-                  {result.isSafe ? 'Ser Sikker Ud' : 'FARE REGISTRERET'}
-                </h3>
-              </div>
-              
-              <p className="text-slate-700 font-medium mb-4">{result.reasoning}</p>
+          {result && !result.error && (() => {
+            const status = result.status ?? (result.isSafe ? 'green' : 'red');
+            const dangerList = result.knownDanger ?? result.flaggedIngredients ?? [];
+            const unknownList = result.unknown ?? [];
+            const safeMatches = result.knownSafe ?? [];
 
-              {!result.isSafe && result.flaggedIngredients?.length > 0 && (
-                <div className="mb-4">
-                  <span className="text-xs font-bold text-red-800 uppercase tracking-wider block mb-1">Markerede Ingredienser:</span>
-                  <div className="flex flex-wrap gap-2">
-                    {result.flaggedIngredients.map((ing, idx) => (
-                      <span key={idx} className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-semibold">{ing}</span>
-                    ))}
-                  </div>
+            const palette = {
+              green: {
+                card: 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200',
+                title: 'text-emerald-800',
+                icon: <ShieldCheck size={32} className="text-emerald-500" />,
+                heading: 'Alle ingredienser er kendte og sikre',
+              },
+              orange: {
+                card: 'bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200',
+                title: 'text-orange-800',
+                icon: <Sparkles size={32} className="text-orange-500" />,
+                heading: 'Nye ingredienser fundet',
+              },
+              red: {
+                card: 'bg-gradient-to-br from-red-50 to-rose-50 border-red-200',
+                title: 'text-red-800',
+                icon: <ShieldAlert size={32} className="text-red-500" />,
+                heading: 'FARE REGISTRERET',
+              },
+            }[status];
+
+            return (
+              <div className={`p-5 rounded-3xl shadow-md shadow-slate-200/60 border ${palette.card}`}>
+                <div className="flex items-center gap-3 mb-3">
+                  {palette.icon}
+                  <h3 className={`text-xl font-extrabold tracking-tight ${palette.title}`}>{palette.heading}</h3>
                 </div>
-              )}
 
-              <div className="mt-4 pt-4 border-t border-slate-200/50">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Registrerede Ingredienser:</span>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  {result.ingredientsFound?.join(', ')}
-                </p>
+                <p className="text-slate-700 font-medium mb-4">{result.reasoning}</p>
+
+                {status === 'red' && dangerList.length > 0 && (
+                  <div className="mb-4">
+                    <span className="text-xs font-bold text-red-800 uppercase tracking-wider block mb-1">På Forbudt-Listen:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {dangerList.map((ing, idx) => (
+                        <span key={idx} className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-semibold">{ing}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {status !== 'red' && unknownList.length > 0 && (
+                  <div className="mb-4">
+                    <span className="text-xs font-bold text-orange-800 uppercase tracking-wider block mb-1">Nye / Ikke Testede:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {unknownList.map((ing, idx) => (
+                        <span key={idx} className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-semibold">{ing}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {safeMatches.length > 0 && (
+                  <div className="mb-2">
+                    <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider block mb-1">Kendt Sikre:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {safeMatches.map((ing, idx) => (
+                        <span key={idx} className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-sm font-medium">{ing}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-4 pt-4 border-t border-slate-200/50">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Registrerede Ingredienser:</span>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    {result.ingredientsFound?.join(', ')}
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {result?.error && (
              <div className="p-4 bg-orange-50 border border-orange-200 text-orange-800 rounded-xl">
@@ -609,8 +696,11 @@ function TrialsView({ familyCode, familyData }) {
   const handleDayPassed = async (trial) => {
     const newDays = trial.daysPassed + 1;
     if (newDays === 4) {
+      const existing = normalizeList(familyData.safeFoods, familyData.createdAt);
+      const entry = { name: trial.foodName, addedAt: new Date().toISOString() };
+      const merged = existing.some((f) => f.name === trial.foodName) ? existing : [...existing, entry];
       await updateTrial(trial.id, { daysPassed: 4, status: 'passed' }, {
-        safeFoods: arrayUnion(trial.foodName)
+        safeFoods: merged
       });
     } else {
       await updateTrial(trial.id, { daysPassed: newDays });
@@ -624,8 +714,11 @@ function TrialsView({ familyCode, familyData }) {
   };
 
   const handleFailTrial = async (trial) => {
+    const existing = normalizeList(familyData.dangerFoods, familyData.createdAt);
+    const entry = { name: trial.foodName, addedAt: new Date().toISOString() };
+    const merged = existing.some((f) => f.name === trial.foodName) ? existing : [...existing, entry];
     await updateTrial(trial.id, { status: 'failed' }, {
-      dangerFoods: arrayUnion(trial.foodName)
+      dangerFoods: merged
     });
     setConfirmFail(null);
   };
@@ -635,20 +728,20 @@ function TrialsView({ familyCode, familyData }) {
 
   return (
     <div className="max-w-md mx-auto space-y-6">
-      <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-        <h2 className="text-lg font-bold text-slate-800 mb-3">Start 4-Dages Test</h2>
+      <div className="bg-white p-5 rounded-3xl shadow-md shadow-slate-200/60 border border-slate-100">
+        <h2 className="text-lg font-extrabold tracking-tight text-slate-800 mb-3">Start 4-Dages Test</h2>
         <form onSubmit={handleAddTrial} className="flex gap-2">
-          <input 
-            type="text" 
-            placeholder="f.eks. Sød kartoffel" 
+          <input
+            type="text"
+            placeholder="f.eks. Sød kartoffel"
             value={newFood}
             onChange={(e) => setNewFood(e.target.value)}
-            className="flex-1 border border-slate-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+            className="flex-1 border-2 border-slate-200 rounded-2xl px-4 py-2.5 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
           />
-          <button 
+          <button
             type="submit"
             disabled={!newFood.trim()}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white p-2 rounded-xl"
+            className="bg-gradient-to-br from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 disabled:opacity-50 text-white p-2.5 rounded-2xl shadow-md shadow-blue-500/30 transition-all"
           >
             <Plus size={24} />
           </button>
@@ -661,7 +754,7 @@ function TrialsView({ familyCode, familyData }) {
           <p className="text-slate-400 text-center py-8">Ingen aktive tests. Start med at teste en ny madvare ovenfor!</p>
         ) : (
           activeTrials.map(trial => (
-            <div key={trial.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+            <div key={trial.id} className="bg-white p-4 rounded-3xl shadow-md shadow-slate-200/60 border border-slate-100">
               <div className="flex justify-between items-start mb-4">
                 <h4 className="text-lg font-bold text-slate-800">{trial.foodName}</h4>
                 {confirmFail === trial.id ? (
@@ -749,101 +842,196 @@ function FoodsView({ familyCode, familyData }) {
   const [activeList, setActiveList] = useState('danger');
   const [newItem, setNewItem] = useState('');
   const [confirmRemove, setConfirmRemove] = useState(null);
+  const [sortMode, setSortMode] = useState(() => localStorage.getItem('fpiesSortMode') || 'newest');
+  const [copyMenuOpen, setCopyMenuOpen] = useState(false);
+  const [copiedToast, setCopiedToast] = useState(false);
+  const copyMenuRef = useRef(null);
+
+  useEffect(() => { localStorage.setItem('fpiesSortMode', sortMode); }, [sortMode]);
+
+  // Close copy menu when clicking outside
+  useEffect(() => {
+    if (!copyMenuOpen) return;
+    const onClick = (e) => {
+      if (copyMenuRef.current && !copyMenuRef.current.contains(e.target)) setCopyMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [copyMenuOpen]);
+
+  const targetKey = activeList === 'danger' ? 'dangerFoods' : 'safeFoods';
+  const rawList = familyData[targetKey];
+  const normalized = normalizeList(rawList, familyData.createdAt);
+  const sortedList = sortFoods(normalized, sortMode);
 
   const handleAddItem = async (e) => {
     e.preventDefault();
     if (!newItem.trim()) return;
 
-    const targetList = activeList === 'danger' ? 'dangerFoods' : 'safeFoods';
+    const trimmed = newItem.trim();
+    if (normalized.some((f) => f.name.toLowerCase() === trimmed.toLowerCase())) {
+      setNewItem('');
+      return;
+    }
+
     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'families', familyCode);
-    
     await updateDoc(docRef, {
-      [targetList]: arrayUnion(newItem.trim())
+      [targetKey]: [...normalized, { name: trimmed, addedAt: new Date().toISOString() }]
     });
     setNewItem('');
   };
 
-  const removeFood = async (food, listType) => {
-    const targetList = listType === 'danger' ? 'dangerFoods' : 'safeFoods';
-    const updatedList = familyData[targetList].filter(item => item !== food);
-    
+  const removeFood = async (foodName) => {
+    const updatedList = normalized.filter((item) => item.name !== foodName);
     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'families', familyCode);
-    await updateDoc(docRef, {
-      [targetList]: updatedList
-    });
+    await updateDoc(docRef, { [targetKey]: updatedList });
     setConfirmRemove(null);
   };
 
-  const displayList = activeList === 'danger' ? familyData.dangerFoods : familyData.safeFoods;
+  const copyList = async (format) => {
+    const items = sortedList.map((f) => f.name);
+    const header = activeList === 'danger' ? 'Forbudt Liste' : 'Sikker Liste';
+    const text = format === 'markdown'
+      ? `## ${header}\n${items.map((n) => `- ${n}`).join('\n')}`
+      : items.join('\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedToast(true);
+      setTimeout(() => setCopiedToast(false), 1600);
+    } catch (err) {
+      console.error('Clipboard write failed:', err);
+    }
+    setCopyMenuOpen(false);
+  };
+
+  const isDanger = activeList === 'danger';
+  const accentText = isDanger ? 'text-rose-600' : 'text-emerald-600';
+  const accentBtn = isDanger
+    ? 'bg-gradient-to-br from-rose-500 to-red-500 hover:from-rose-600 hover:to-red-600'
+    : 'bg-gradient-to-br from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600';
 
   return (
     <div className="max-w-md mx-auto flex flex-col h-full">
-      <div className="flex bg-slate-200 p-1 rounded-xl mb-6">
-        <button 
+      {/* Tabs */}
+      <div className="flex bg-white/70 backdrop-blur p-1 rounded-2xl mb-4 shadow-sm shadow-slate-200/60 border border-white">
+        <button
           onClick={() => setActiveList('danger')}
-          className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeList === 'danger' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-500'}`}
+          className={`flex-1 py-2.5 text-sm font-extrabold rounded-xl transition-all ${activeList === 'danger' ? 'bg-gradient-to-br from-rose-100 to-red-50 text-rose-700 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
         >
           Forbudt Liste
         </button>
-        <button 
+        <button
           onClick={() => setActiveList('safe')}
-          className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeList === 'safe' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500'}`}
+          className={`flex-1 py-2.5 text-sm font-extrabold rounded-xl transition-all ${activeList === 'safe' ? 'bg-gradient-to-br from-emerald-100 to-teal-50 text-emerald-700 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
         >
           Sikker Liste
         </button>
       </div>
 
+      {/* Toolbar: sort + copy */}
+      <div className="flex items-center justify-between mb-3 gap-2">
+        <div className="flex items-center gap-1.5 bg-white rounded-xl border border-slate-200 px-2 py-1.5 shadow-sm">
+          <ArrowUpDown size={14} className="text-slate-400" />
+          <select
+            value={sortMode}
+            onChange={(e) => setSortMode(e.target.value)}
+            className="text-xs font-semibold text-slate-600 bg-transparent outline-none"
+          >
+            <option value="newest">Nyeste først</option>
+            <option value="oldest">Ældste først</option>
+            <option value="az">A – Å</option>
+            <option value="za">Å – A</option>
+          </select>
+        </div>
+
+        <div className="relative" ref={copyMenuRef}>
+          <button
+            onClick={() => setCopyMenuOpen((v) => !v)}
+            className="flex items-center gap-1.5 bg-white rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 shadow-sm"
+          >
+            <Copy size={14} /> Kopier
+            <ChevronDown size={12} className="text-slate-400" />
+          </button>
+          {copyMenuOpen && (
+            <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-slate-200 rounded-xl shadow-lg z-30 overflow-hidden">
+              <button onClick={() => copyList('plain')} className="w-full text-left px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
+                Almindelig tekst
+              </button>
+              <button onClick={() => copyList('markdown')} className="w-full text-left px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 border-t border-slate-100">
+                Markdown (til LLM-chat)
+              </button>
+            </div>
+          )}
+          {copiedToast && (
+            <span className="absolute right-0 top-full mt-2 bg-slate-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-lg z-30 whitespace-nowrap">
+              Kopieret!
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Add form */}
       <form onSubmit={handleAddItem} className="mb-4 flex gap-2">
-        <input 
-          type="text" 
-          placeholder={`Tilføj til ${activeList === 'danger' ? 'Forbudt' : 'Sikker'} liste...`}
+        <input
+          type="text"
+          placeholder={`Tilføj til ${isDanger ? 'Forbudt' : 'Sikker'} liste...`}
           value={newItem}
           onChange={(e) => setNewItem(e.target.value)}
-          className="flex-1 border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm"
+          className="flex-1 border-2 border-slate-200 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none shadow-sm bg-white"
         />
-        <button 
+        <button
           type="submit"
           disabled={!newItem.trim()}
-          className={`px-4 rounded-xl font-bold text-white shadow-sm disabled:opacity-50 transition-colors
-            ${activeList === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+          className={`px-5 rounded-2xl font-extrabold text-white shadow-lg shadow-slate-200 disabled:opacity-50 transition-all ${accentBtn}`}
         >
-          Tilføj
+          <Plus size={20} />
         </button>
       </form>
 
-      <div className="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="h-full overflow-y-auto p-4 space-y-2">
-          {displayList.length === 0 ? (
-            <p className="text-center text-slate-400 py-8">Ingen madvarer på denne liste endnu.</p>
+      {/* List */}
+      <div className="flex-1 bg-white rounded-3xl shadow-md shadow-slate-200/60 border border-slate-100 overflow-hidden">
+        <div className="h-full overflow-y-auto p-3 space-y-1.5">
+          {sortedList.length === 0 ? (
+            <p className="text-center text-slate-400 py-12 font-medium">Ingen madvarer på denne liste endnu.</p>
           ) : (
-            displayList.map((food, idx) => (
-              <div key={idx} className="flex justify-between items-center p-3 hover:bg-slate-50 border border-slate-100 rounded-xl group">
-                <span className="font-medium text-slate-700">{food}</span>
-                {confirmRemove === food ? (
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => removeFood(food, activeList)}
-                      className="text-xs font-bold text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-lg shadow-sm"
-                    >
-                      Slet
-                    </button>
-                    <button 
-                      onClick={() => setConfirmRemove(null)}
-                      className="text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg shadow-sm"
-                    >
-                      Fortryd
-                    </button>
+            sortedList.map((food) => {
+              const dateLabel = food.addedAt
+                ? new Date(food.addedAt).toLocaleDateString('da-DK', { day: 'numeric', month: 'short', year: 'numeric' })
+                : '—';
+              return (
+                <div key={food.name} className="flex justify-between items-center p-3 hover:bg-slate-50 border border-slate-100 rounded-2xl group transition-colors">
+                  <div className="flex flex-col">
+                    <span className={`font-bold ${accentText}`}>{food.name}</span>
+                    <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
+                      <Clock size={10} /> Tilføjet {dateLabel}
+                    </span>
                   </div>
-                ) : (
-                  <button 
-                    onClick={() => setConfirmRemove(food)}
-                    className="text-slate-300 hover:text-red-500 p-1 rounded-md transition-colors"
-                  >
-                    <XCircle size={18} />
-                  </button>
-                )}
-              </div>
-            ))
+                  {confirmRemove === food.name ? (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => removeFood(food.name)}
+                        className="text-xs font-bold text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-lg shadow-sm"
+                      >
+                        Slet
+                      </button>
+                      <button
+                        onClick={() => setConfirmRemove(null)}
+                        className="text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg shadow-sm"
+                      >
+                        Fortryd
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmRemove(food.name)}
+                      className="text-slate-300 hover:text-red-500 p-1 rounded-md transition-colors"
+                    >
+                      <XCircle size={18} />
+                    </button>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
       </div>
