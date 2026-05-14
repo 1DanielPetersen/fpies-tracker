@@ -1,21 +1,91 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, List, ShieldCheck, ShieldAlert, Plus, CheckCircle, XCircle, Info, ScanLine, LogOut, Users, Image as ImageIcon, Copy, Sparkles, ChevronDown, ArrowUpDown, Clock } from 'lucide-react';
+import { Camera, List, ShieldCheck, ShieldAlert, Plus, CheckCircle, XCircle, Info, ScanLine, LogOut, Users, Image as ImageIcon, Copy, Sparkles, ChevronDown, ArrowUpDown, Clock, RefreshCw } from 'lucide-react';
 
 // --- FIREBASE IMPORTS ---
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 
-// --- PWA SERVICE WORKER REGISTRATION ---
-// Browsers strictly require a Service Worker to trigger the native "Install App" prompt.
-if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(() => {
-      console.log('Service Worker registered successfully for PWA.');
+// --- BUILD VERSION ---
+// Injected by Vite at build time (see vite.config.js). Falls back to 'dev'
+// when running locally so updates aren't falsely flagged in dev.
+const APP_VERSION = typeof __BUILD_VERSION__ !== 'undefined' ? __BUILD_VERSION__ : 'dev';
+
+// --- PWA UPDATE HOOK ---
+// Registers the service worker, polls /version.json, and exposes an
+// applyUpdate() that activates the waiting SW and reloads the page.
+function useAppUpdate() {
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+  const registrationRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+
+    let cancelled = false;
+
+    const trackInstalling = (worker) => {
+      if (!worker) return;
+      worker.addEventListener('statechange', () => {
+        if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+          setUpdateAvailable(true);
+        }
+      });
+    };
+
+    navigator.serviceWorker.register('/sw.js').then((reg) => {
+      if (cancelled) return;
+      registrationRef.current = reg;
+      if (reg.waiting && navigator.serviceWorker.controller) setUpdateAvailable(true);
+      if (reg.installing) trackInstalling(reg.installing);
+      reg.addEventListener('updatefound', () => trackInstalling(reg.installing));
     }).catch((err) => {
       console.log('Service Worker registration failed:', err);
     });
-  });
+
+    const checkVersion = async () => {
+      try {
+        const res = await fetch('/version.json', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data && data.version && data.version !== APP_VERSION) {
+          setUpdateAvailable(true);
+          if (registrationRef.current) {
+            registrationRef.current.update().catch(() => {});
+          }
+        }
+      } catch (_) {
+        // Offline or version.json missing — ignore.
+      }
+    };
+
+    checkVersion();
+    const interval = setInterval(checkVersion, 60_000);
+    const onFocus = () => checkVersion();
+    window.addEventListener('focus', onFocus);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, []);
+
+  const applyUpdate = async () => {
+    try {
+      const reg = registrationRef.current;
+      if (reg && reg.waiting) {
+        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      }
+      if ('caches' in window) {
+        const names = await caches.keys();
+        await Promise.all(names.map((n) => caches.delete(n)));
+      }
+    } finally {
+      window.location.reload();
+    }
+  };
+
+  return { updateAvailable, applyUpdate };
 }
 
 // --- FIREBASE INITIALIZATION ---
@@ -66,6 +136,7 @@ export default function App() {
   const [familyData, setFamilyData] = useState(null);
   const [activeTab, setActiveTab] = useState('scanner');
   const [joinError, setJoinError] = useState("");
+  const { updateAvailable, applyUpdate } = useAppUpdate();
   
   // Auth Effect
   useEffect(() => {
@@ -167,15 +238,26 @@ export default function App() {
 
   // --- APP UI ---
   if (!authReady) {
-    return <div className="min-h-screen flex items-center justify-center bg-blue-50 text-blue-800">Indlæser FPIES Beskytter...</div>;
+    return (
+      <div className="min-h-screen flex flex-col bg-blue-50 text-blue-800">
+        <UpdateBanner show={updateAvailable} onUpdate={applyUpdate} />
+        <div className="flex-1 flex items-center justify-center">Indlæser FPIES Beskytter...</div>
+      </div>
+    );
   }
 
   if (!familyCode || !familyData) {
-    return <FamilySetup onCreate={handleCreateFamily} onJoin={handleJoinFamily} error={joinError} />;
+    return (
+      <>
+        <UpdateBanner show={updateAvailable} onUpdate={applyUpdate} />
+        <FamilySetup onCreate={handleCreateFamily} onJoin={handleJoinFamily} error={joinError} />
+      </>
+    );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-rose-50 flex flex-col font-sans pb-24">
+      <UpdateBanner show={updateAvailable} onUpdate={applyUpdate} />
       {/* Header */}
       <header className="bg-white/80 backdrop-blur p-4 shadow-sm border-b border-white sticky top-0 z-10 flex justify-between items-center">
         <div>
@@ -212,6 +294,30 @@ export default function App() {
 // ============================================================================
 // COMPONENTS
 // ============================================================================
+
+function UpdateBanner({ show, onUpdate }) {
+  const [busy, setBusy] = useState(false);
+  if (!show) return null;
+  const handleClick = () => {
+    setBusy(true);
+    onUpdate();
+  };
+  return (
+    <div className="sticky top-0 z-30 bg-blue-600 text-white px-4 py-2 flex items-center justify-between gap-3 shadow">
+      <div className="flex items-center gap-2 text-sm font-medium">
+        <RefreshCw size={16} className={busy ? 'animate-spin' : ''} />
+        <span>En ny version af appen er tilgængelig.</span>
+      </div>
+      <button
+        onClick={handleClick}
+        disabled={busy}
+        className="bg-white text-blue-700 font-semibold text-sm px-3 py-1 rounded-md hover:bg-blue-50 disabled:opacity-60"
+      >
+        {busy ? 'Opdaterer…' : 'Opdater app'}
+      </button>
+    </div>
+  );
+}
 
 function FamilySetup({ onCreate, onJoin, error }) {
   const [joinCode, setJoinCode] = useState("");
