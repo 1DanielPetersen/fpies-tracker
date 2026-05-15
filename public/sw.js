@@ -1,4 +1,5 @@
-const CACHE_NAME = 'fpies-v1';
+const VERSION = '__BUILD_VERSION__';
+const CACHE_NAME = `fpies-${VERSION}`;
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
@@ -6,7 +7,8 @@ self.addEventListener('install', (e) => {
       return cache.addAll(['/']);
     })
   );
-  self.skipWaiting();
+  // Intentionally no skipWaiting(): the new worker waits until the user
+  // confirms the update via the in-app "Opdater app" button.
 });
 
 self.addEventListener('activate', (e) => {
@@ -15,17 +17,28 @@ self.addEventListener('activate', (e) => {
       return Promise.all(
         names.filter((name) => name !== CACHE_NAME).map((name) => caches.delete(name))
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  e.waitUntil(clients.claim());
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('fetch', (e) => {
+  const url = new URL(e.request.url);
+  // Never cache the version manifest — it must always reflect the latest deploy.
+  if (url.pathname === '/version.json') {
+    e.respondWith(fetch(e.request, { cache: 'no-store' }).catch(() => caches.match(e.request)));
+    return;
+  }
+
   // Network-first strategy: try network, fall back to cache
   e.respondWith(
     fetch(e.request)
       .then((response) => {
-        // Cache successful GET responses
         if (e.request.method === 'GET' && response.status === 200) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
