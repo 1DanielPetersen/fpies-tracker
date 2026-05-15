@@ -1,8 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
 /* Adds padding for iPhones with the home indicator bar at the bottom */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+@keyframes fpiesFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fpies-fade-in {
+  animation: fpiesFadeIn 200ms ease-out both;
 }

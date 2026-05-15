@@ -167,7 +167,7 @@ export default function App() {
 
   // --- APP UI ---
   if (!authReady) {
-    return <div className="min-h-screen flex items-center justify-center bg-blue-50 text-blue-800">Indlæser FPIES Beskytter...</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-rose-100 text-rose-700 font-semibold">Indlæser FPIES Beskytter...</div>;
   }
 
   if (!familyCode || !familyData) {
@@ -175,19 +175,19 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-rose-50 flex flex-col font-sans pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-100 flex flex-col font-sans pb-24">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur p-4 shadow-sm border-b border-white sticky top-0 z-10 flex justify-between items-center">
+      <header className="bg-white/80 backdrop-blur p-4 shadow-sm shadow-rose-200/40 border-b border-rose-100/60 sticky top-0 z-10 flex justify-between items-center">
         <div>
           <h1 className="text-xl font-extrabold tracking-tight text-slate-800 flex items-center gap-2">
-            <span className="inline-flex w-8 h-8 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white items-center justify-center shadow-md shadow-blue-500/30">
+            <span className="inline-flex w-8 h-8 rounded-2xl bg-gradient-to-br from-rose-400 to-orange-400 text-white items-center justify-center shadow-md shadow-rose-400/30">
               <ShieldCheck size={18} />
             </span>
             FPIES Beskytter
           </h1>
-          <p className="text-xs text-slate-500 font-semibold ml-10">Familiekode: <span className="text-blue-600 tracking-wider">{familyCode}</span></p>
+          <p className="text-xs text-slate-500 font-semibold ml-10">Familiekode: <span className="text-rose-500 tracking-wider">{familyCode}</span></p>
         </div>
-        <button onClick={handleLeaveFamily} className="p-2 text-slate-400 hover:text-red-500 rounded-full transition-colors">
+        <button onClick={handleLeaveFamily} className="p-2 text-slate-400 hover:text-rose-500 rounded-full transition-colors">
           <LogOut size={20} />
         </button>
       </header>
@@ -200,7 +200,7 @@ export default function App() {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-slate-100 flex justify-around p-2 pb-safe z-20 shadow-[0_-4px_24px_-8px_rgba(15,23,42,0.08)]">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-rose-100/60 flex justify-around p-2 pb-safe z-20 shadow-[0_-4px_24px_-8px_rgba(244,63,94,0.12)]">
         <NavButton active={activeTab === 'scanner'} onClick={() => setActiveTab('scanner')} icon={<Camera />} label="Scanner" />
         <NavButton active={activeTab === 'trials'} onClick={() => setActiveTab('trials')} icon={<List />} label="4-Dages Test" />
         <NavButton active={activeTab === 'foods'} onClick={() => setActiveTab('foods')} icon={<ShieldCheck />} label="Madlister" />
@@ -217,9 +217,9 @@ function FamilySetup({ onCreate, onJoin, error }) {
   const [joinCode, setJoinCode] = useState("");
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-rose-50 to-amber-50 flex flex-col items-center justify-center p-6">
-      <div className="bg-white p-8 rounded-3xl shadow-2xl shadow-blue-500/10 w-full max-w-md text-center border border-white">
-        <div className="bg-gradient-to-br from-blue-500 to-indigo-500 text-white w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/30">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-100 flex flex-col items-center justify-center p-6">
+      <div className="bg-white/90 backdrop-blur p-8 rounded-3xl shadow-2xl shadow-rose-500/10 w-full max-w-md text-center border border-rose-100/60">
+        <div className="bg-gradient-to-br from-rose-400 to-orange-400 text-white w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-rose-400/30">
           <ShieldAlert size={32} />
         </div>
         <h1 className="text-3xl font-extrabold tracking-tight text-slate-800 mb-2">FPIES Beskytter</h1>
@@ -227,22 +227,22 @@ function FamilySetup({ onCreate, onJoin, error }) {
 
         <button
           onClick={onCreate}
-          className="w-full bg-gradient-to-br from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-extrabold py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-500/30 transition-all hover:scale-[1.01] flex items-center justify-center gap-2 mb-6"
+          className="w-full bg-gradient-to-br from-rose-400 to-orange-400 hover:from-rose-500 hover:to-orange-500 text-white font-extrabold py-3.5 px-4 rounded-2xl shadow-lg shadow-rose-400/30 transition-all hover:scale-[1.01] flex items-center justify-center gap-2 mb-6"
         >
           <Plus size={20} /> Opret Ny Familie
         </button>
 
         <div className="relative flex items-center py-5">
-          <div className="flex-grow border-t border-slate-200"></div>
+          <div className="flex-grow border-t border-rose-100"></div>
           <span className="flex-shrink-0 mx-4 text-slate-400 text-sm font-semibold">ELLER</span>
-          <div className="flex-grow border-t border-slate-200"></div>
+          <div className="flex-grow border-t border-rose-100"></div>
         </div>
 
         <div className="space-y-3">
           <input
             type="text"
             placeholder="Indtast Familiekode"
-            className="w-full border-2 border-slate-200 rounded-2xl px-4 py-3 text-center text-lg uppercase tracking-widest focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
+            className="w-full border-2 border-rose-100 rounded-2xl px-4 py-3 text-center text-lg uppercase tracking-widest focus:ring-2 focus:ring-rose-300 focus:border-rose-300 outline-none"
             value={joinCode}
             onChange={(e) => setJoinCode(e.target.value)}
           />
@@ -264,9 +264,9 @@ function NavButton({ active, onClick, icon, label }) {
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center justify-center w-24 py-2 transition-all ${active ? 'text-blue-600 scale-105' : 'text-slate-400 hover:text-slate-600'}`}
+      className={`flex flex-col items-center justify-center w-24 py-2 transition-all ${active ? 'text-rose-500 scale-105' : 'text-slate-400 hover:text-slate-600'}`}
     >
-      <span className={`inline-flex items-center justify-center rounded-2xl p-1.5 mb-0.5 transition-all ${active ? 'bg-gradient-to-br from-blue-100 to-indigo-50 shadow-sm' : ''}`}>
+      <span className={`inline-flex items-center justify-center rounded-2xl p-1.5 mb-0.5 transition-all ${active ? 'bg-gradient-to-br from-rose-100 to-orange-50 shadow-sm shadow-rose-200/60' : ''}`}>
         {React.cloneElement(icon, { size: 22 })}
       </span>
       <span className="text-[10px] font-extrabold tracking-wide">{label}</span>
@@ -392,9 +392,9 @@ const payload = {
 
   return (
     <div className="flex flex-col items-center max-w-md mx-auto h-full">
-      <div className="w-full bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-2xl border border-blue-100 mb-6 flex items-start gap-3 shadow-sm">
-        <Info className="text-blue-500 shrink-0 mt-0.5" size={20} />
-        <p className="text-sm text-blue-800 font-medium leading-relaxed">
+      <div className="w-full bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-2xl border border-amber-100 mb-6 flex items-start gap-3 shadow-sm shadow-rose-200/40">
+        <Info className="text-orange-500 shrink-0 mt-0.5" size={20} />
+        <p className="text-sm text-orange-900 font-medium leading-relaxed">
           Tag et billede eller upload en ingrediensliste. AI'en vil lede efter ingredienser, der matcher din Forbudt-liste, og specielt lede efter skjulte majsderivater.
         </p>
       </div>
@@ -402,7 +402,7 @@ const payload = {
       {!image && !loading && (
         <div className="flex flex-col gap-4 w-full">
           {/* Main Camera Button */}
-          <label className="w-full h-64 bg-gradient-to-br from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 rounded-3xl flex flex-col items-center justify-center text-white transition-all hover:scale-[1.01] shadow-xl shadow-blue-500/30 cursor-pointer">
+          <label className="w-full h-64 bg-gradient-to-br from-rose-400 to-orange-400 hover:from-rose-500 hover:to-orange-500 rounded-3xl flex flex-col items-center justify-center text-white transition-all hover:scale-[1.01] shadow-xl shadow-rose-400/30 cursor-pointer">
             <input
               type="file"
               accept="image/*"
@@ -415,25 +415,25 @@ const payload = {
           </label>
 
           {/* Secondary Gallery Button */}
-          <label className="w-full py-4 bg-white border-2 border-slate-200 text-slate-600 font-extrabold rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer shadow-sm">
+          <label className="w-full py-4 bg-white/90 backdrop-blur border-2 border-rose-100 text-slate-600 font-extrabold rounded-2xl flex items-center justify-center gap-2 hover:bg-white hover:border-rose-200 transition-colors cursor-pointer shadow-sm shadow-rose-200/40">
             <input
               type="file"
               accept="image/*"
               className="hidden"
               onChange={handleImageCapture}
             />
-            <ImageIcon size={20} className="text-slate-400" /> Upload Billede fra Galleri
+            <ImageIcon size={20} className="text-rose-300" /> Upload Billede fra Galleri
           </label>
         </div>
       )}
 
       {image && (
         <div className="w-full space-y-4">
-          <div className="relative rounded-xl overflow-hidden border border-slate-200 shadow-sm max-h-64 flex justify-center bg-black">
+          <div className="relative rounded-2xl overflow-hidden border border-rose-100 shadow-sm shadow-rose-200/40 max-h-64 flex justify-center bg-black">
             <img src={image} alt="Scannet etiket" className="object-contain h-64" />
             {loading && (
               <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white">
-                <ScanLine size={48} className="animate-pulse mb-2 text-blue-400" />
+                <ScanLine size={48} className="animate-pulse mb-2 text-orange-300" />
                 <span className="font-medium animate-pulse">Analyserer AI...</span>
               </div>
             )}
@@ -453,21 +453,21 @@ const payload = {
                 heading: 'Alle ingredienser er kendte og sikre',
               },
               orange: {
-                card: 'bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200',
-                title: 'text-orange-800',
-                icon: <Sparkles size={32} className="text-orange-500" />,
+                card: 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200',
+                title: 'text-orange-900',
+                icon: <Sparkles size={32} className="text-orange-400" />,
                 heading: 'Nye ingredienser fundet',
               },
               red: {
-                card: 'bg-gradient-to-br from-red-50 to-rose-50 border-red-200',
-                title: 'text-red-800',
-                icon: <ShieldAlert size={32} className="text-red-500" />,
+                card: 'bg-gradient-to-br from-rose-50 to-red-50 border-rose-200',
+                title: 'text-rose-900',
+                icon: <ShieldAlert size={32} className="text-rose-500" />,
                 heading: 'FARE REGISTRERET',
               },
             }[status];
 
             return (
-              <div className={`p-5 rounded-3xl shadow-md shadow-slate-200/60 border ${palette.card}`}>
+              <div key={status} className={`fpies-fade-in p-5 rounded-3xl shadow-lg shadow-rose-200/40 border ${palette.card}`}>
                 <div className="flex items-center gap-3 mb-3">
                   {palette.icon}
                   <h3 className={`text-xl font-extrabold tracking-tight ${palette.title}`}>{palette.heading}</h3>
@@ -477,10 +477,10 @@ const payload = {
 
                 {status === 'red' && dangerList.length > 0 && (
                   <div className="mb-4">
-                    <span className="text-xs font-bold text-red-800 uppercase tracking-wider block mb-1">På Forbudt-Listen:</span>
+                    <span className="text-xs font-bold text-rose-900 uppercase tracking-wider block mb-1">På Forbudt-Listen:</span>
                     <div className="flex flex-wrap gap-2">
                       {dangerList.map((ing, idx) => (
-                        <span key={idx} className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-semibold">{ing}</span>
+                        <span key={idx} className="bg-rose-100 text-rose-800 px-3 py-1 rounded-full text-sm font-semibold">{ing}</span>
                       ))}
                     </div>
                   </div>
@@ -488,10 +488,10 @@ const payload = {
 
                 {status !== 'red' && unknownList.length > 0 && (
                   <div className="mb-4">
-                    <span className="text-xs font-bold text-orange-800 uppercase tracking-wider block mb-1">Nye / Ikke Testede:</span>
+                    <span className="text-xs font-bold text-orange-900 uppercase tracking-wider block mb-1">Nye / Ikke Testede:</span>
                     <div className="flex flex-wrap gap-2">
                       {unknownList.map((ing, idx) => (
-                        <span key={idx} className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-semibold">{ing}</span>
+                        <span key={idx} className="bg-orange-100 text-orange-900 px-3 py-1 rounded-full text-sm font-semibold">{ing}</span>
                       ))}
                     </div>
                   </div>
@@ -508,7 +508,7 @@ const payload = {
                   </div>
                 )}
 
-                <div className="mt-4 pt-4 border-t border-slate-200/50">
+                <div className="mt-4 pt-4 border-t border-rose-200/40">
                   <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Registrerede Ingredienser:</span>
                   <p className="text-xs text-slate-600 leading-relaxed">
                     {result.ingredientsFound?.join(', ')}
@@ -519,28 +519,28 @@ const payload = {
           })()}
 
           {result?.error && (
-             <div className="p-4 bg-orange-50 border border-orange-200 text-orange-800 rounded-xl">
+             <div className="p-4 bg-amber-50 border border-amber-200 text-orange-900 rounded-2xl shadow-sm shadow-rose-200/40">
                {result.reasoning}
              </div>
           )}
 
           {!loading && (
             <div className="flex gap-2">
-              <label className="flex-1 bg-white border-2 border-slate-200 text-slate-700 font-bold py-3 px-2 rounded-xl shadow-sm hover:bg-slate-50 flex items-center justify-center gap-2 text-sm cursor-pointer">
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  capture="environment" 
-                  className="hidden" 
+              <label className="flex-1 bg-white/90 backdrop-blur border-2 border-rose-100 text-slate-700 font-bold py-3 px-2 rounded-2xl shadow-sm shadow-rose-200/40 hover:bg-white hover:border-rose-200 flex items-center justify-center gap-2 text-sm cursor-pointer transition-colors">
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
                   onChange={handleImageCapture}
                 />
                 <Camera size={18} /> Nyt Kamera Scan
               </label>
-              <label className="flex-1 bg-white border-2 border-slate-200 text-slate-700 font-bold py-3 px-2 rounded-xl shadow-sm hover:bg-slate-50 flex items-center justify-center gap-2 text-sm cursor-pointer">
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  className="hidden" 
+              <label className="flex-1 bg-white/90 backdrop-blur border-2 border-rose-100 text-slate-700 font-bold py-3 px-2 rounded-2xl shadow-sm shadow-rose-200/40 hover:bg-white hover:border-rose-200 flex items-center justify-center gap-2 text-sm cursor-pointer transition-colors">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
                   onChange={handleImageCapture}
                 />
                 <ImageIcon size={18} /> Nyt Upload
@@ -622,7 +622,7 @@ function TrialsView({ familyCode, familyData }) {
 
   return (
     <div className="max-w-md mx-auto space-y-6">
-      <div className="bg-white p-5 rounded-3xl shadow-md shadow-slate-200/60 border border-slate-100">
+      <div className="bg-white/90 backdrop-blur p-5 rounded-3xl shadow-md shadow-rose-200/40 border border-rose-100/60">
         <h2 className="text-lg font-extrabold tracking-tight text-slate-800 mb-3">Start 4-Dages Test</h2>
         <form onSubmit={handleAddTrial} className="flex gap-2">
           <input
@@ -630,12 +630,12 @@ function TrialsView({ familyCode, familyData }) {
             placeholder="f.eks. Sød kartoffel"
             value={newFood}
             onChange={(e) => setNewFood(e.target.value)}
-            className="flex-1 border-2 border-slate-200 rounded-2xl px-4 py-2.5 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
+            className="flex-1 border-2 border-rose-100 rounded-2xl px-4 py-2.5 focus:ring-2 focus:ring-rose-300 focus:border-rose-300 outline-none bg-white"
           />
           <button
             type="submit"
             disabled={!newFood.trim()}
-            className="bg-gradient-to-br from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 disabled:opacity-50 text-white p-2.5 rounded-2xl shadow-md shadow-blue-500/30 transition-all"
+            className="bg-gradient-to-br from-rose-400 to-orange-400 hover:from-rose-500 hover:to-orange-500 disabled:opacity-50 text-white p-2.5 rounded-2xl shadow-md shadow-rose-400/30 transition-all"
           >
             <Plus size={24} />
           </button>
@@ -648,28 +648,28 @@ function TrialsView({ familyCode, familyData }) {
           <p className="text-slate-400 text-center py-8">Ingen aktive tests. Start med at teste en ny madvare ovenfor!</p>
         ) : (
           activeTrials.map(trial => (
-            <div key={trial.id} className="bg-white p-4 rounded-3xl shadow-md shadow-slate-200/60 border border-slate-100">
+            <div key={trial.id} className="bg-white/90 backdrop-blur p-4 rounded-3xl shadow-md shadow-rose-200/40 border border-rose-100/60">
               <div className="flex justify-between items-start mb-4">
                 <h4 className="text-lg font-bold text-slate-800">{trial.foodName}</h4>
                 {confirmFail === trial.id ? (
                   <div className="flex gap-2">
-                    <button 
+                    <button
                       onClick={() => handleFailTrial(trial)}
-                      className="text-xs font-bold text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-lg shadow-sm"
+                      className="text-xs font-bold text-white bg-gradient-to-br from-rose-400 to-red-500 hover:from-rose-500 hover:to-red-600 px-3 py-1.5 rounded-full shadow-sm shadow-rose-400/30"
                     >
                       Bekræft
                     </button>
-                    <button 
+                    <button
                       onClick={() => setConfirmFail(null)}
-                      className="text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg shadow-sm"
+                      className="text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-full shadow-sm"
                     >
                       Fortryd
                     </button>
                   </div>
                 ) : (
-                  <button 
+                  <button
                     onClick={() => setConfirmFail(trial.id)}
-                    className="text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"
+                    className="text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-full flex items-center gap-1 transition-colors"
                   >
                     <XCircle size={14} /> Mislykkedes (Forbyd)
                   </button>
@@ -692,13 +692,13 @@ function TrialsView({ familyCode, familyData }) {
                         }}
                         disabled={!isNext && !canUndo}
                         className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all shadow-sm
-                          ${isPassed ? 'bg-emerald-500 text-white shadow-emerald-200 hover:bg-emerald-600' : 
-                            isNext ? 'bg-blue-100 text-blue-700 border-2 border-blue-500 hover:bg-blue-200 scale-110' : 
+                          ${isPassed ? 'bg-gradient-to-br from-emerald-400 to-teal-400 text-white shadow-emerald-200 hover:from-emerald-500 hover:to-teal-500' :
+                            isNext ? 'bg-amber-100 text-amber-700 border-2 border-amber-400 hover:bg-amber-200 scale-110' :
                             'bg-slate-50 text-slate-300 border border-slate-200'}`}
                       >
                         {isPassed ? <CheckCircle size={20} /> : day}
                       </button>
-                      <span className={`text-[10px] font-bold uppercase ${isPassed ? 'text-emerald-600' : isNext ? 'text-blue-600' : 'text-slate-400'}`}>
+                      <span className={`text-[10px] font-bold uppercase ${isPassed ? 'text-emerald-600' : isNext ? 'text-amber-600' : 'text-slate-400'}`}>
                         Dag {day}
                       </span>
                     </div>
@@ -714,12 +714,12 @@ function TrialsView({ familyCode, familyData }) {
         <div className="space-y-3 pt-6">
           <h3 className="font-bold text-slate-500 uppercase text-sm tracking-wider px-1">Nyligt Afsluttede</h3>
           {pastTrials.map(trial => (
-            <div key={trial.id} className="bg-white p-3 rounded-xl border border-slate-200 flex items-center justify-between opacity-70">
+            <div key={trial.id} className="bg-white/80 backdrop-blur p-3 rounded-2xl border border-rose-100/60 flex items-center justify-between opacity-80">
               <span className="font-medium text-slate-700">{trial.foodName}</span>
               {trial.status === 'passed' ? (
-                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">Godkendt til Sikker</span>
+                <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full">Godkendt til Sikker</span>
               ) : (
-                <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded-md">Fejlet til Forbudt</span>
+                <span className="text-xs font-bold text-rose-700 bg-rose-50 px-2 py-1 rounded-full">Fejlet til Forbudt</span>
               )}
             </div>
           ))}
@@ -801,30 +801,35 @@ function FoodsView({ familyCode, familyData }) {
   const isDanger = activeList === 'danger';
   const accentText = isDanger ? 'text-rose-600' : 'text-emerald-600';
   const accentBtn = isDanger
-    ? 'bg-gradient-to-br from-rose-500 to-red-500 hover:from-rose-600 hover:to-red-600'
-    : 'bg-gradient-to-br from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600';
+    ? 'bg-gradient-to-br from-rose-400 to-red-500 hover:from-rose-500 hover:to-red-600 shadow-rose-400/30'
+    : 'bg-gradient-to-br from-emerald-400 to-teal-400 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-400/30';
+  const underlineColor = isDanger ? 'bg-gradient-to-r from-rose-400 to-red-500' : 'bg-gradient-to-r from-emerald-400 to-teal-400';
 
   return (
     <div className="max-w-md mx-auto flex flex-col h-full">
       {/* Tabs */}
-      <div className="flex bg-white/70 backdrop-blur p-1 rounded-2xl mb-4 shadow-sm shadow-slate-200/60 border border-white">
+      <div className="relative flex bg-white/80 backdrop-blur p-1 rounded-2xl mb-4 shadow-sm shadow-rose-200/40 border border-rose-100/60">
         <button
           onClick={() => setActiveList('danger')}
-          className={`flex-1 py-2.5 text-sm font-extrabold rounded-xl transition-all ${activeList === 'danger' ? 'bg-gradient-to-br from-rose-100 to-red-50 text-rose-700 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+          className={`flex-1 py-2.5 text-sm font-extrabold rounded-xl transition-colors relative z-10 ${activeList === 'danger' ? 'text-rose-700' : 'text-slate-400 hover:text-slate-600'}`}
         >
           Forbudt Liste
         </button>
         <button
           onClick={() => setActiveList('safe')}
-          className={`flex-1 py-2.5 text-sm font-extrabold rounded-xl transition-all ${activeList === 'safe' ? 'bg-gradient-to-br from-emerald-100 to-teal-50 text-emerald-700 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+          className={`flex-1 py-2.5 text-sm font-extrabold rounded-xl transition-colors relative z-10 ${activeList === 'safe' ? 'text-emerald-700' : 'text-slate-400 hover:text-slate-600'}`}
         >
           Sikker Liste
         </button>
+        <span
+          aria-hidden
+          className={`absolute bottom-1 left-1 h-0.5 w-[calc(50%-0.25rem)] rounded-full transition-transform duration-200 ease-out ${underlineColor} ${isDanger ? 'translate-x-0' : 'translate-x-full'}`}
+        />
       </div>
 
       {/* Toolbar: sort + copy */}
       <div className="flex items-center justify-between mb-3 gap-2">
-        <div className="flex items-center gap-1.5 bg-white rounded-xl border border-slate-200 px-2 py-1.5 shadow-sm">
+        <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur rounded-xl border border-rose-100/60 px-2 py-1.5 shadow-sm hover:shadow-rose-200/50 transition-shadow">
           <ArrowUpDown size={14} className="text-slate-400" />
           <select
             value={sortMode}
@@ -841,24 +846,24 @@ function FoodsView({ familyCode, familyData }) {
         <div className="relative" ref={copyMenuRef}>
           <button
             onClick={() => setCopyMenuOpen((v) => !v)}
-            className="flex items-center gap-1.5 bg-white rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 shadow-sm"
+            className="flex items-center gap-1.5 bg-white/90 backdrop-blur rounded-xl border border-rose-100/60 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-white hover:shadow-rose-200/50 shadow-sm transition-shadow"
           >
             <Copy size={14} /> Kopier
             <ChevronDown size={12} className="text-slate-400" />
           </button>
           {copyMenuOpen && (
-            <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-slate-200 rounded-xl shadow-lg z-30 overflow-hidden">
-              <button onClick={() => copyList('plain')} className="w-full text-left px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
+            <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-rose-100 rounded-2xl shadow-lg shadow-rose-200/50 z-30 overflow-hidden">
+              <button onClick={() => copyList('plain')} className="w-full text-left px-3 py-2.5 text-sm text-slate-700 hover:bg-rose-50">
                 Almindelig tekst
               </button>
-              <button onClick={() => copyList('markdown')} className="w-full text-left px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 border-t border-slate-100">
+              <button onClick={() => copyList('markdown')} className="w-full text-left px-3 py-2.5 text-sm text-slate-700 hover:bg-rose-50 border-t border-rose-100">
                 Markdown (til LLM-chat)
               </button>
             </div>
           )}
           {copiedToast && (
-            <span className="absolute right-0 top-full mt-2 bg-slate-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-lg z-30 whitespace-nowrap">
-              Kopieret!
+            <span className="absolute right-0 top-full mt-2 bg-emerald-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg shadow-emerald-500/30 z-30 whitespace-nowrap flex items-center gap-1">
+              <CheckCircle size={12} /> Kopieret!
             </span>
           )}
         </div>
@@ -871,19 +876,19 @@ function FoodsView({ familyCode, familyData }) {
           placeholder={`Tilføj til ${isDanger ? 'Forbudt' : 'Sikker'} liste...`}
           value={newItem}
           onChange={(e) => setNewItem(e.target.value)}
-          className="flex-1 border-2 border-slate-200 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none shadow-sm bg-white"
+          className="flex-1 border-2 border-rose-100 rounded-2xl px-4 py-3 focus:ring-2 focus:ring-rose-300 focus:border-rose-300 outline-none shadow-sm shadow-rose-200/40 bg-white/90 backdrop-blur"
         />
         <button
           type="submit"
           disabled={!newItem.trim()}
-          className={`px-5 rounded-2xl font-extrabold text-white shadow-lg shadow-slate-200 disabled:opacity-50 transition-all ${accentBtn}`}
+          className={`px-5 rounded-2xl font-extrabold text-white shadow-lg disabled:opacity-50 transition-all hover:scale-[1.02] ${accentBtn}`}
         >
           <Plus size={20} />
         </button>
       </form>
 
       {/* List */}
-      <div className="flex-1 bg-white rounded-3xl shadow-md shadow-slate-200/60 border border-slate-100 overflow-hidden">
+      <div className="flex-1 bg-white/90 backdrop-blur rounded-3xl shadow-md shadow-rose-200/40 border border-rose-100/60 overflow-hidden">
         <div className="h-full overflow-y-auto p-3 space-y-1.5">
           {sortedList.length === 0 ? (
             <p className="text-center text-slate-400 py-12 font-medium">Ingen madvarer på denne liste endnu.</p>
@@ -893,7 +898,7 @@ function FoodsView({ familyCode, familyData }) {
                 ? new Date(food.addedAt).toLocaleDateString('da-DK', { day: 'numeric', month: 'short', year: 'numeric' })
                 : '—';
               return (
-                <div key={food.name} className="flex justify-between items-center p-3 hover:bg-slate-50 border border-slate-100 rounded-2xl group transition-colors">
+                <div key={food.name} className="flex justify-between items-center p-3 hover:bg-rose-50/60 border border-rose-100/60 rounded-2xl group transition-colors">
                   <div className="flex flex-col">
                     <span className={`font-bold ${accentText}`}>{food.name}</span>
                     <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
@@ -904,13 +909,13 @@ function FoodsView({ familyCode, familyData }) {
                     <div className="flex gap-2">
                       <button
                         onClick={() => removeFood(food.name)}
-                        className="text-xs font-bold text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-lg shadow-sm"
+                        className="text-xs font-bold text-white bg-gradient-to-br from-rose-400 to-red-500 hover:from-rose-500 hover:to-red-600 px-3 py-1.5 rounded-full shadow-sm shadow-rose-400/30"
                       >
                         Slet
                       </button>
                       <button
                         onClick={() => setConfirmRemove(null)}
-                        className="text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg shadow-sm"
+                        className="text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-full shadow-sm"
                       >
                         Fortryd
                       </button>
@@ -918,7 +923,7 @@ function FoodsView({ familyCode, familyData }) {
                   ) : (
                     <button
                       onClick={() => setConfirmRemove(food.name)}
-                      className="text-slate-300 hover:text-red-500 p-1 rounded-md transition-colors"
+                      className="text-slate-300 hover:text-rose-500 p-1 rounded-md transition-colors"
                     >
                       <XCircle size={18} />
                     </button>
