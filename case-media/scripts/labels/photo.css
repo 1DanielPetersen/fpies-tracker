@@ -1,0 +1,160 @@
+/* Shared "phone photo" look for the fictional labels: a pouch lying on a
+   light wooden table, shot slightly from the side in daylight. Everything is
+   drawn with CSS and fixed-seed SVG noise, so every render is identical. */
+
+html, body { margin: 0; padding: 0; }
+body {
+  width: 1600px;
+  height: 1200px;
+  overflow: hidden;
+  background: #cdb594;
+}
+
+.scene {
+  position: relative;
+  width: 1600px;
+  height: 1200px;
+  overflow: hidden;
+  filter: blur(0.45px) saturate(0.94) contrast(0.97);
+}
+
+/* Light oak table top. */
+.table {
+  position: absolute;
+  inset: -40px;
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1680' height='1280'><filter id='w'><feTurbulence type='fractalNoise' baseFrequency='0.0025 0.06' numOctaves='4' seed='7'/><feColorMatrix values='0 0 0 0 0.45  0 0 0 0 0.32  0 0 0 0 0.2  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23w)'/></svg>"),
+    linear-gradient(96deg, #d8c09d 0%, #cfb48e 38%, #d9c4a3 61%, #ccb18a 100%);
+  transform: rotate(-11deg) scale(1.15);
+}
+
+/* The pouch, back side up, tilted away from the camera. */
+.pouch-wrap {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1500px;
+  height: 1500px;
+  margin-left: -750px;
+  margin-top: -690px;
+  perspective: 2100px;
+}
+.pouch {
+  position: absolute;
+  left: 150px;
+  top: 60px;
+  width: 1220px;
+  height: 1560px;
+  border-radius: 34px 34px 46px 46px;
+  transform: rotateX(14deg) rotateY(-5deg) rotateZ(-1.5deg);
+  transform-origin: 50% 40%;
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.35) inset,
+    0 -3px 8px rgba(0, 0, 0, 0.06) inset,
+    30px 46px 70px rgba(60, 38, 14, 0.38),
+    6px 10px 18px rgba(60, 38, 14, 0.25);
+  overflow: hidden;
+}
+/* Matte print with soft fibre texture. */
+.pouch::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1220' height='1560'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 0.3  0 0 0 0 0.25  0 0 0 0 0.2  0 0 0 0.16 0'/></filter><rect width='100%' height='100%' filter='url(%23p)'/></svg>");
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 5;
+}
+/* Gentle creases and the light falling across the laminate. */
+.pouch::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(118deg, rgba(255,255,255,0.0) 18%, rgba(255,255,255,0.22) 27%, rgba(255,255,255,0.0) 37%),
+    linear-gradient(176deg, rgba(0,0,0,0.0) 47%, rgba(0,0,0,0.05) 49.5%, rgba(255,255,255,0.08) 51%, rgba(0,0,0,0.0) 54%),
+    linear-gradient(84deg, rgba(0,0,0,0.0) 69%, rgba(0,0,0,0.045) 71%, rgba(255,255,255,0.06) 72.5%, rgba(0,0,0,0.0) 75%),
+    radial-gradient(120% 90% at 18% 8%, rgba(255,255,255,0.18), rgba(255,255,255,0) 55%),
+    linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(40,25,10,0.12) 100%);
+  pointer-events: none;
+  z-index: 6;
+}
+/* Heat-sealed strip along the top edge. */
+.seal {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 64px;
+  background: repeating-linear-gradient(90deg, rgba(0,0,0,0.05) 0 3px, rgba(255,255,255,0.05) 3px 7px);
+  border-bottom: 2px solid rgba(0,0,0,0.06);
+}
+
+.print {
+  position: absolute;
+  inset: 110px 96px 80px 96px;
+  color: #2b2a28;
+  font-family: 'Source Sans 3', 'Liberation Sans', sans-serif;
+}
+
+/* Window light from the upper left, a darker lower right corner and the
+   slight vignette of a phone lens. */
+.light {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(70% 60% at 22% 18%, rgba(255, 249, 236, 0.30), rgba(255, 249, 236, 0) 70%),
+    radial-gradient(80% 80% at 92% 100%, rgba(40, 24, 8, 0.28), rgba(40, 24, 8, 0) 60%),
+    radial-gradient(130% 120% at 50% 45%, rgba(0, 0, 0, 0) 58%, rgba(20, 12, 4, 0.30) 100%);
+  pointer-events: none;
+}
+/* The far edge is a touch out of focus. */
+.dof {
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(2.2px);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,0.55) 14%, rgba(0,0,0,0) 30%);
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,0.55) 14%, rgba(0,0,0,0) 30%);
+  pointer-events: none;
+}
+/* Sensor grain. */
+.grain {
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1600' height='1200'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='1.15' numOctaves='1' seed='11'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.11 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* ---- Print typography shared by both labels ---- */
+.brandless-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 40px; }
+.title { font-family: 'Nunito', 'Inter', sans-serif; font-weight: 900; font-size: 92px; line-height: 0.98; letter-spacing: -1px; margin: 0; }
+.subtitle { font-family: 'Nunito', 'Inter', sans-serif; font-weight: 700; font-size: 46px; margin: 14px 0 0; }
+.badge {
+  flex: none;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Nunito', 'Inter', sans-serif;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+  transform: rotate(8deg);
+}
+.badge b { font-size: 70px; font-weight: 900; }
+.badge span { font-size: 34px; margin-top: 4px; }
+.rule { height: 4px; border-radius: 2px; margin: 46px 0 40px; opacity: 0.8; }
+.ingredients { font-size: 47px; line-height: 1.32; margin: 0 0 40px; }
+.ingredients strong { font-weight: 800; }
+.nutrition { width: 100%; border-collapse: collapse; font-size: 36px; line-height: 1.25; }
+.nutrition caption { text-align: left; font-weight: 800; font-size: 38px; padding-bottom: 10px; }
+.nutrition td { padding: 7px 0; border-top: 2px solid rgba(43, 42, 40, 0.55); }
+.nutrition td:last-child { text-align: right; white-space: nowrap; }
+.nutrition tr.sub td:first-child { padding-left: 28px; }
+.nutrition tr:last-child td { border-bottom: 2px solid rgba(43, 42, 40, 0.55); }
+.small { font-size: 31px; line-height: 1.35; margin: 34px 0 0; }
+.net { font-weight: 800; font-size: 40px; margin-top: 26px; }

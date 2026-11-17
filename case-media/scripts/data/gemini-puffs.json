@@ -1,0 +1,12 @@
+{
+  "source": "stub",
+  "note": "Written by hand in the app's exact response schema, because no Gemini API key was available. Run the scripts with GEMINI_RECORD=1 and a key to replace it with a real answer.",
+  "answer": {
+    "ingredientsFound": ["Sød kartoffel", "Gulerod", "Majsstivelse", "Kikærtemel", "Maltodextrin"],
+    "knownSafe": ["Sød kartoffel", "Gulerod"],
+    "knownDanger": ["Majsstivelse", "Maltodextrin"],
+    "unknown": ["Kikærtemel"],
+    "status": "red",
+    "reasoning": "Produktet indeholder majsstivelse og maltodextrin, som begge er majsderivater på Forbudt-listen, og kikærtemel er ikke testet endnu."
+  }
+}

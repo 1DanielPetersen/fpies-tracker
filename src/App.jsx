@@ -3,8 +3,8 @@ import { Camera, List, ShieldCheck, ShieldAlert, Plus, CheckCircle, XCircle, Inf
 
 // --- FIREBASE IMPORTS ---
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, connectAuthEmulator } from 'firebase/auth';
+import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, connectFirestoreEmulator } from 'firebase/firestore';
 
 // --- BUILD VERSION ---
 // Injected by Vite at build time (see vite.config.js). Falls back to 'dev'
@@ -97,9 +97,30 @@ const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__f
   messagingSenderId: "824186924382",
   appId: "1:824186924382:web:2c8782cc29f74490b933cf"
 };
+
+// --- CAPTURE BUILD ONLY (case-media branch) ---------------------------------
+// VITE_USE_EMULATOR is set only by case-media/scripts/vite.capture.config.js,
+// which also injects a demo- Firebase config. Normal builds never set it, so
+// this block does nothing there. In the capture build the app refuses to start
+// unless the project id starts with "demo-", then talks only to the local
+// Firebase emulators (see the second block below).
+const USE_EMULATOR = import.meta.env.VITE_USE_EMULATOR === 'true';
+if (USE_EMULATOR && !String(firebaseConfig.projectId || '').startsWith('demo-')) {
+  throw new Error('[capture build] Refusing to start: Firebase projectId must start with "demo-".');
+}
+// --- END CAPTURE BUILD ONLY --------------------------------------------------
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+// --- CAPTURE BUILD ONLY (case-media branch) ---------------------------------
+if (USE_EMULATOR) {
+  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+}
+// --- END CAPTURE BUILD ONLY --------------------------------------------------
+
 const appId = typeof __app_id !== 'undefined' ? __app_id : '1:824186924382:web:2c8782cc29f74490b933cf';
 
 // --- GEMINI API SETUP ---

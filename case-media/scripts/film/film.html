@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<title>FPIES Beskytter film stage</title>
+<!-- The film's stage: 1920 x 1200, two phones, no text, no logos. render-film.mjs
+     builds the timeline with buildFilm(config), pauses every animation and
+     screenshots one frame at a time. -->
+<style>
+  html, body { margin: 0; padding: 0; background: #FBFBF9; }
+  #stage { position: relative; width: 1920px; height: 1200px; overflow: hidden; background: #FBFBF9; }
+  /* The screen: clipped to the inner radius of the frame stroke. */
+  .screen { position: absolute; overflow: hidden; isolation: isolate; background: #fff; }
+  .screen > * { position: absolute; left: 0; top: 0; }
+  .screen img { display: block; }
+  .group { width: 100%; height: 100%; }
+  .group > img { position: absolute; left: 0; top: 0; }
+  /* 1.5 px #E3E1DC frame, drawn as an SVG stroke so the half pixel is real. */
+  .frame { position: absolute; overflow: visible; pointer-events: none; }
+  .tap { position: absolute; width: 28px; height: 28px; margin: -14px 0 0 -14px; border-radius: 50%; background: #101315; opacity: 0; pointer-events: none; }
+  /* Soft highlight on the row that just synced in (a film effect, not app UI). */
+  .highlight { mix-blend-mode: multiply; background: #d1fae5; opacity: 0; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+window.buildFilm = async function buildFilm(cfg) {
+  const T = cfg.total;
+  const stage = document.getElementById('stage');
+  const at = (t) => Math.min(1, Math.max(0, t / T));
+  const EASE = 'cubic-bezier(0.42, 0, 0.58, 1)';
+  const PULSE = 'cubic-bezier(0.4, 0, 0.6, 1)'; // Tailwind's animate-pulse curve
+
+  // Keyframes on one shared clock from 0 to T, so currentTime = film time.
+  const anim = (el, frames) => el.animate(frames, { duration: T, fill: 'both', easing: 'linear' });
+  const fadeIn = ([a, b]) => [
+    { opacity: 0, offset: 0 }, { opacity: 0, offset: at(a), easing: EASE }, { opacity: 1, offset: at(b) }, { opacity: 1, offset: 1 },
+  ];
+  const cut = (t) => [{ opacity: 0, offset: 0 }, { opacity: 0, offset: at(t) }, { opacity: 1, offset: at(t) }, { opacity: 1, offset: 1 }];
+  const keys = (pairs) => [
+    { opacity: pairs[0][1], offset: 0 },
+    ...pairs.map(([t, o]) => ({ opacity: o, offset: at(t), easing: EASE })),
+    { opacity: pairs[pairs.length - 1][1], offset: 1 },
+  ];
+  const pulse = (start, end) => {
+    // Blend weight of the half-strength still: 0 -> 1 -> 0 every 2 s,
+    // which reproduces the app's opacity 1 -> .5 -> 1 pulse exactly.
+    const f = [{ opacity: 0, offset: 0 }];
+    for (let t = start, w = 0; t <= end + 1000; t += 1000, w = 1 - w) f.push({ opacity: w, offset: at(t), easing: PULSE });
+    f.push({ opacity: f[f.length - 1].opacity, offset: 1 });
+    return f;
+  };
+  const img = (src, w, h) => {
+    const el = new Image(w, h);
+    el.src = src;
+    el.decoding = 'sync';
+    return el;
+  };
+
+  const decodes = [];
+  for (const p of cfg.phones) {
+    const screen = document.createElement('div');
+    screen.className = 'screen';
+    Object.assign(screen.style, { left: `${p.x}px`, top: `${p.y}px`, width: `${p.w}px`, height: `${p.h}px`, borderRadius: `${p.radius - p.stroke}px` });
+    stage.appendChild(screen);
+
+    for (const layer of p.layers) {
+      let el;
+      if (layer.highlight) {
+        el = document.createElement('div');
+        el.className = 'highlight';
+        const r = layer.highlight;
+        Object.assign(el.style, { left: `${r.x}px`, top: `${r.y}px`, width: `${r.w}px`, height: `${r.h}px`, borderRadius: `${r.radius}px` });
+        anim(el, keys(layer.keys));
+      } else if (layer.group) {
+        el = document.createElement('div');
+        el.className = 'group';
+        for (const part of layer.group) {
+          const child = img(part.src, p.w, p.h);
+          el.appendChild(child);
+          decodes.push(child.decode());
+          if (part.pulse) anim(child, pulse(part.pulse[0], part.pulse[1]));
+        }
+      } else {
+        el = img(layer.src, p.w, p.h);
+        decodes.push(el.decode());
+      }
+      if (layer.fadeIn) anim(el, fadeIn(layer.fadeIn));
+      if (layer.cut !== undefined) anim(el, cut(layer.cut));
+      screen.appendChild(el);
+    }
+
+    // Frame stroke, centred half a stroke outside the screen edge.
+    const s = p.stroke;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'frame');
+    svg.setAttribute('width', p.w + 2 * s);
+    svg.setAttribute('height', p.h + 2 * s);
+    Object.assign(svg.style, { left: `${p.x - s}px`, top: `${p.y - s}px` });
+    svg.innerHTML = `<rect x="${s / 2}" y="${s / 2}" width="${p.w + s}" height="${p.h + s}" rx="${p.radius - s / 2}" fill="none" stroke="#E3E1DC" stroke-width="${s}"/>`;
+    stage.appendChild(svg);
+  }
+
+  for (const t of cfg.taps) {
+    const dot = document.createElement('div');
+    dot.className = 'tap';
+    Object.assign(dot.style, { left: `${t.x}px`, top: `${t.y}px` });
+    stage.appendChild(dot);
+    // Lands, rests for a beat, then fades: 20% #101315.
+    dot.animate([
+      { opacity: 0, transform: 'scale(0.7)', offset: 0 },
+      { opacity: 0, transform: 'scale(0.7)', offset: at(t.t), easing: 'ease-out' },
+      { opacity: 0.2, transform: 'scale(1)', offset: at(t.t + 90) },
+      { opacity: 0.2, transform: 'scale(1)', offset: at(t.t + 260), easing: EASE },
+      { opacity: 0, transform: 'scale(1.12)', offset: at(t.t + 560) },
+      { opacity: 0, transform: 'scale(1.12)', offset: 1 },
+    ], { duration: T, fill: 'both' });
+  }
+
+  await Promise.all(decodes);
+  for (const a of document.getAnimations()) a.pause();
+  return document.getAnimations().length;
+};
+
+// Seek every animation, then wait two frames so the compositor has drawn the
+// new values before the screenshot (opacity and transform run there).
+window.seekFilm = function seekFilm(t) {
+  for (const a of document.getAnimations()) a.currentTime = t;
+  return new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+};
+</script>
+</body>
+</html>

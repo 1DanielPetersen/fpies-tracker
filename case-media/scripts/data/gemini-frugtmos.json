@@ -1,0 +1,12 @@
+{
+  "source": "stub",
+  "note": "Written by hand in the app's exact response schema, because no Gemini API key was available. Run the scripts with GEMINI_RECORD=1 and a key to replace it with a real answer.",
+  "answer": {
+    "ingredientsFound": ["Pære", "Æble", "Blåbær"],
+    "knownSafe": ["Pære", "Æble", "Blåbær"],
+    "knownDanger": [],
+    "unknown": [],
+    "status": "green",
+    "reasoning": "Alle ingredienser (pære, æble og blåbær) står på Sikker-listen, og der er ingen majsderivater eller andre forbudte ingredienser."
+  }
+}
