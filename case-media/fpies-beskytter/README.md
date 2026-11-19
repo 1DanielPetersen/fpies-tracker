@@ -13,7 +13,22 @@ Billeder og en kort film af FPIES Beskytter til historien på entilen.dk. Alt er
 | `fpies-film.mp4`, `fpies-film.webm` | 1920 × 1200, 13 sek., loop, ingen lyd | To telefoner på samme familiekode: den venstre scanner etiketten og får det røde svar, skifter til 4-Dages Test og trykker Dag 4 på Laks, og lidt efter står Laks øverst på den højre telefons Sikker Liste. |
 | `fpies-film-poster.png` | 1920 × 1200 | Filmens færdige tilstand: Laks er godkendt på den venstre telefon og står øverst på Sikker Liste på den højre. |
 
-Synkroniseringen i filmen er ægte. Begge telefoner kører live mod emulatoren, og Laks nåede den højre telefon cirka 0,2 sek. efter trykket. I filmen vises det cirka 1,5 sek. senere, så man kan nå at se det.
+Synkroniseringen i filmen er ægte. Begge telefoner kører live mod emulatoren, og Laks nåede den højre telefon 0,2 til 0,3 sek. efter trykket. I filmen vises det cirka 1,5 sek. senere, så man kan nå at se det.
+
+## Filmens farver
+
+Filmen og plakaten står på sidens baggrund **#F4F1EA** med en tynd kant (hårlinje) i **#DCD7CF** rundt om telefonerne. Telefonbillederne har ingen sidebaggrund og er ikke berørt af farverne.
+
+- **Plakaten** har præcis #F4F1EA i hver eneste baggrundspixel og præcis #DCD7CF i hårlinjen.
+- **Videoen** er 8-bit YUV, så baggrunden afkodes som **#F5F1E9**, ét niveau fra i rød og blå. Målt i både MP4 og WebM, med ffmpeg (BT.709) og i Chromium. Forskellen kan ikke ses.
+
+Begge farver er én indstilling. Næste farveskift er én linje:
+
+```bash
+FILM_ONLY=1 FILM_BG='#F4F1EA' FILM_HAIRLINE='#DCD7CF' case-media/scripts/run-all.sh
+```
+
+`FILM_ONLY=1` laver kun filmen og plakaten om og rører ikke telefonbillederne. Til sidst tjekker kørslen plakatens farver og skriver videoens målte baggrund ud (linjen "Film background as decoded"), så tallet ovenfor kan rettes. Standardfarverne står på linjen `DEFAULT_COLORS` i `scripts/render-film.mjs`.
 
 ## Scan-svaret er en stub, ikke et rigtigt Gemini-svar
 
@@ -43,7 +58,7 @@ Vil du have et rigtigt svar, så kør `run-all.sh` én gang med `GEMINI_RECORD=1
 case-media/scripts/run-all.sh
 ```
 
-Kræver Node 20+, Java 21+, ffmpeg og Playwright med Chromium. Er `oxipng` installeret, bliver PNG'erne mindre (uden tab). Scriptet bygger capture-versionen, starter emulatorerne og en lokal server, lægger den opdigtede familie ind, tager billederne, laver filmen og tjekker alle filer mod kravene. Capture-browseren blokerer `firestore.googleapis.com`, `identitytoolkit.googleapis.com` og `securetoken.googleapis.com`, og scriptet stopper, hvis appen ikke er capture-buildet.
+Det laver alt om. Med `FILM_ONLY=1` foran laves kun filmen og plakaten (se "Filmens farver"). Kræver Node 20+, Java 21+, ffmpeg og Playwright med Chromium. Er `oxipng` installeret, bliver PNG'erne mindre (uden tab). Scriptet bygger capture-versionen, starter emulatorerne og en lokal server, lægger den opdigtede familie ind, tager billederne, laver filmen og tjekker alle filer mod kravene. Capture-browseren blokerer `firestore.googleapis.com`, `identitytoolkit.googleapis.com` og `securetoken.googleapis.com`, og scriptet stopper, hvis appen ikke er capture-buildet.
 
 | Script | Gør |
 |---|---|
@@ -53,4 +68,4 @@ Kræver Node 20+, Java 21+, ffmpeg og Playwright med Chromium. Er `oxipng` insta
 | `labels/`, `make-labels.mjs` | De opdigtede etiketter. Fotoene ligger færdige i `labels/` (så billederne bliver ens hver gang); kør `make-labels.mjs` kun hvis en etiket skal ændres |
 | `capture-stills.mjs` | De fire telefonbilleder |
 | `capture-film-steps.mjs`, `render-film.mjs`, `film/film.html` | Filmen og plakaten |
-| `verify-media.mjs` | Tjekker pixelstørrelser, filstørrelser og videoformat |
+| `verify-media.mjs` | Tjekker pixelstørrelser, filstørrelser, videoformat og filmens farver |

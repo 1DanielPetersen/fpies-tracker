@@ -10,6 +10,11 @@
 #
 # Optional: GEMINI_RECORD=1 VITE_GEMINI_API_KEY=... records one real Gemini
 # answer per label (saved in scripts/data) and replays it from then on.
+#
+# Film colours: FILM_BG and FILM_HAIRLINE (defaults in render-film.mjs).
+# FILM_ONLY=1 remakes only the film and its poster and leaves the phone
+# stills untouched, e.g. after a colour change:
+#   FILM_ONLY=1 FILM_BG='#F4F1EA' FILM_HAIRLINE='#DCD7CF' case-media/scripts/run-all.sh
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 repo="$(cd "$here/../.." && pwd)"
@@ -64,10 +69,16 @@ need_free_port 4173 "preview server port"
 pids+=($!)
 wait_for http://127.0.0.1:4173/version.json "the preview server"
 
-echo "4/6 Phone stills"
 # The label photos are fixed inputs; they are only re-rendered if missing.
 [ -f case-media/scripts/labels/puffs.jpg ] && [ -f case-media/scripts/labels/frugtmos.jpg ] || node case-media/scripts/make-labels.mjs
-node case-media/scripts/capture-stills.mjs
+if [ "${FILM_ONLY:-}" = 1 ]; then
+  echo "4/6 Phone stills: skipped (FILM_ONLY=1)"
+  pngs=(case-media/fpies-beskytter/fpies-film-poster.png)
+else
+  echo "4/6 Phone stills"
+  node case-media/scripts/capture-stills.mjs
+  pngs=(case-media/fpies-beskytter/*.png)
+fi
 
 echo "5/6 Film"
 node case-media/scripts/capture-film-steps.mjs
@@ -75,7 +86,7 @@ node case-media/scripts/render-film.mjs
 
 echo "6/6 Optimise PNGs and check every file"
 if command -v oxipng >/dev/null 2>&1; then
-  oxipng -o 4 --strip safe -q case-media/fpies-beskytter/*.png
+  oxipng -o 4 --strip safe -q "${pngs[@]}"
 else
   echo "   oxipng not found: PNGs left as captured."
 fi

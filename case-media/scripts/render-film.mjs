@@ -31,6 +31,14 @@ const LEFT_X = (W - (2 * PHONE_W + GAP)) / 2; // 392
 const RIGHT_X = LEFT_X + PHONE_W + GAP; // 1040
 const TOP_Y = (H - PHONE_H) / 2; // 72
 
+// Where the two phone screens sit on the stage (used by the colour checks).
+export const STAGE = {
+  width: W,
+  height: H,
+  stroke: STROKE,
+  phones: [LEFT_X, RIGHT_X].map((x) => ({ x, y: TOP_Y, w: PHONE_W, h: PHONE_H })),
+};
+
 // Timeline in ms. Each tap leads its screen change by 150 ms; crossfades and
 // slides are 300-400 ms.
 export const TL = {
@@ -48,6 +56,25 @@ export const TL = {
   poster: 12000, // finished state, before the loop crossfade
 };
 const SLIDE_FRAMES = 11;
+
+// The film's two colours: the page background on entilen.dk and the hairline
+// round the phones. Change the defaults on the next line, or per run with the
+// env vars FILM_BG / FILM_HAIRLINE or the flags --bg / --hairline (with or
+// without the #). film.html has no colours of its own.
+const DEFAULT_COLORS = { background: '#F4F1EA', hairline: '#DCD7CF' };
+
+function colorSetting(flag, envName, fallback) {
+  const i = process.argv.indexOf(flag);
+  const raw = String((i !== -1 && process.argv[i + 1]) || process.env[envName] || fallback).trim();
+  const value = `#${raw.replace(/^#/, '').toUpperCase()}`;
+  if (!/^#[0-9A-F]{6}$/.test(value)) throw new Error(`${flag} / ${envName} must be a colour like #F4F1EA, got "${raw}"`);
+  return value;
+}
+
+export const FILM_COLORS = {
+  background: colorSetting('--bg', 'FILM_BG', DEFAULT_COLORS.background),
+  hairline: colorSetting('--hairline', 'FILM_HAIRLINE', DEFAULT_COLORS.hairline),
+};
 
 const MP4_LIMIT = 4 * 1024 * 1024;
 const WEBM_LIMIT = 3 * 1024 * 1024;
@@ -164,6 +191,7 @@ function buildConfig(manifest, src, slides) {
 
   return {
     total: TOTAL,
+    colors: FILM_COLORS,
     phones: [
       {
         ...phone,
@@ -247,7 +275,7 @@ export async function renderFilm({ encodeVideo = true } = {}) {
   const browser = await launchBrowser();
   try {
     const { page, count } = await openStage(browser);
-    console.log(`Stage ready: ${count} animations, ${frames} frames.`);
+    console.log(`Stage ready: ${count} animations, ${frames} frames, background ${FILM_COLORS.background}, hairline ${FILM_COLORS.hairline}.`);
     for (let n = 0; n < frames; n++) {
       await page.evaluate((t) => window.seekFilm(t), n * FRAME_MS);
       await page.screenshot({ path: path.join(FRAMES_DIR, `f${String(n).padStart(4, '0')}.png`) });

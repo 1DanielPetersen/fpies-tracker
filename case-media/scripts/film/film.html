@@ -5,17 +5,18 @@
 <title>FPIES Beskytter film stage</title>
 <!-- The film's stage: 1920 x 1200, two phones, no text, no logos. render-film.mjs
      builds the timeline with buildFilm(config), pauses every animation and
-     screenshots one frame at a time. -->
+     screenshots one frame at a time. The background and the hairline colours
+     are not set here: they come from config.colors (see render-film.mjs). -->
 <style>
-  html, body { margin: 0; padding: 0; background: #FBFBF9; }
-  #stage { position: relative; width: 1920px; height: 1200px; overflow: hidden; background: #FBFBF9; }
+  html, body { margin: 0; padding: 0; background: var(--film-bg); }
+  #stage { position: relative; width: 1920px; height: 1200px; overflow: hidden; background: var(--film-bg); }
   /* The screen: clipped to the inner radius of the frame stroke. */
   .screen { position: absolute; overflow: hidden; isolation: isolate; background: #fff; }
   .screen > * { position: absolute; left: 0; top: 0; }
   .screen img { display: block; }
   .group { width: 100%; height: 100%; }
   .group > img { position: absolute; left: 0; top: 0; }
-  /* 1.5 px #E3E1DC frame, drawn as an SVG stroke so the half pixel is real. */
+  /* 1.5 px hairline frame, drawn as an SVG stroke so the half pixel is real. */
   .frame { position: absolute; overflow: visible; pointer-events: none; }
   .tap { position: absolute; width: 28px; height: 28px; margin: -14px 0 0 -14px; border-radius: 50%; background: #101315; opacity: 0; pointer-events: none; }
   /* Soft highlight on the row that just synced in (a film effect, not app UI). */
@@ -28,16 +29,33 @@
 window.buildFilm = async function buildFilm(cfg) {
   const T = cfg.total;
   const stage = document.getElementById('stage');
+  const hex = /^#[0-9A-F]{6}$/i;
+  if (!hex.test(cfg.colors?.background) || !hex.test(cfg.colors?.hairline)) throw new Error('buildFilm needs colors.background and colors.hairline');
+  document.documentElement.style.setProperty('--film-bg', cfg.colors.background);
   const at = (t) => Math.min(1, Math.max(0, t / T));
   const EASE = 'cubic-bezier(0.42, 0, 0.58, 1)';
   const PULSE = 'cubic-bezier(0.4, 0, 0.6, 1)'; // Tailwind's animate-pulse curve
 
   // Keyframes on one shared clock from 0 to T, so currentTime = film time.
   const anim = (el, frames) => el.animate(frames, { duration: T, fill: 'both', easing: 'linear' });
-  const fadeIn = ([a, b]) => [
-    { opacity: 0, offset: 0 }, { opacity: 0, offset: at(a), easing: EASE }, { opacity: 1, offset: at(b) }, { opacity: 1, offset: 1 },
-  ];
-  const cut = (t) => [{ opacity: 0, offset: 0 }, { opacity: 0, offset: at(t) }, { opacity: 1, offset: at(t) }, { opacity: 1, offset: 1 }];
+  // A still appears (crossfade, cut, or from the start) and switches off the
+  // moment the next still above it is fully opaque. So a hold shows exactly
+  // one still and a crossfade two, never a stack: stacked stills would each
+  // get the rounded-corner clip and darken the corner edges a little.
+  const shownAt = (layer) => (layer.fadeIn ? layer.fadeIn[1] : layer.cut ?? 0);
+  const visibility = (layer, hideAt) => {
+    const f = [];
+    if (layer.fadeIn) {
+      f.push({ opacity: 0, offset: 0 }, { opacity: 0, offset: at(layer.fadeIn[0]), easing: EASE }, { opacity: 1, offset: at(layer.fadeIn[1]) });
+    } else if (layer.cut !== undefined) {
+      f.push({ opacity: 0, offset: 0 }, { opacity: 0, offset: at(layer.cut) }, { opacity: 1, offset: at(layer.cut) });
+    } else {
+      f.push({ opacity: 1, offset: 0 });
+    }
+    if (hideAt !== undefined) f.push({ opacity: 1, offset: at(hideAt) }, { opacity: 0, offset: at(hideAt) });
+    f.push({ opacity: f[f.length - 1].opacity, offset: 1 });
+    return f;
+  };
   const keys = (pairs) => [
     { opacity: pairs[0][1], offset: 0 },
     ...pairs.map(([t, o]) => ({ opacity: o, offset: at(t), easing: EASE })),
@@ -65,6 +83,7 @@ window.buildFilm = async function buildFilm(cfg) {
     Object.assign(screen.style, { left: `${p.x}px`, top: `${p.y}px`, width: `${p.w}px`, height: `${p.h}px`, borderRadius: `${p.radius - p.stroke}px` });
     stage.appendChild(screen);
 
+    const stills = p.layers.filter((l) => !l.highlight); // in time order, bottom to top
     for (const layer of p.layers) {
       let el;
       if (layer.highlight) {
@@ -86,19 +105,24 @@ window.buildFilm = async function buildFilm(cfg) {
         el = img(layer.src, p.w, p.h);
         decodes.push(el.decode());
       }
-      if (layer.fadeIn) anim(el, fadeIn(layer.fadeIn));
-      if (layer.cut !== undefined) anim(el, cut(layer.cut));
+      if (!layer.highlight) {
+        const next = stills[stills.indexOf(layer) + 1];
+        anim(el, visibility(layer, next && shownAt(next)));
+      }
       screen.appendChild(el);
     }
 
-    // Frame stroke, centred half a stroke outside the screen edge.
+    // Frame stroke, flush outside the screen edge. The SVG box sits on whole
+    // pixels (a half-pixel position gets snapped and shifts the hairline);
+    // the half pixel lives inside it, in the rect's coordinates.
     const s = p.stroke;
+    const pad = Math.ceil(s);
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('class', 'frame');
-    svg.setAttribute('width', p.w + 2 * s);
-    svg.setAttribute('height', p.h + 2 * s);
-    Object.assign(svg.style, { left: `${p.x - s}px`, top: `${p.y - s}px` });
-    svg.innerHTML = `<rect x="${s / 2}" y="${s / 2}" width="${p.w + s}" height="${p.h + s}" rx="${p.radius - s / 2}" fill="none" stroke="#E3E1DC" stroke-width="${s}"/>`;
+    svg.setAttribute('width', p.w + 2 * pad);
+    svg.setAttribute('height', p.h + 2 * pad);
+    Object.assign(svg.style, { left: `${p.x - pad}px`, top: `${p.y - pad}px` });
+    svg.innerHTML = `<rect x="${pad - s / 2}" y="${pad - s / 2}" width="${p.w + s}" height="${p.h + s}" rx="${p.radius - s / 2}" fill="none" stroke="${cfg.colors.hairline}" stroke-width="${s}"/>`;
     stage.appendChild(svg);
   }
 
